@@ -1,0 +1,119 @@
+<?php
+
+namespace Stanford\ProjMCHRI;
+/** @var \Stanford\ProjMCHRI\ProjMCHRI $module */
+
+use REDCap;
+
+$module->emDebug("Starting MCHRI landing page for project $pid");
+
+$sunet_id = $_SERVER['WEBAUTH_USER'];
+//$sunet_id = 'soda';
+$debug    = $module->getProjectSetting('test');
+
+if ($debug) { $sunet_id = 'test3';}
+
+
+
+//if sunet ID not set leave
+if (!isset($sunet_id) && !$debug) {
+    die("SUNet ID was not available. Please webauth in and try again!");
+}
+
+if (isset($_POST['budget_worksheet'])) {
+    $module->emDebug("dowoading file");
+
+    $edoc_id = "1588";
+    $dl_status = $module->downloadfile($edoc_id);
+
+
+    $result = array(
+        'result' => 'success'
+    );
+
+    header('Content-Type: application/json');
+    print json_encode($result);
+    exit();
+}
+
+# loop through keeping those where sunet_fields contain $sunet_id
+$flex_data = $module->prepareRows($sunet_id, $module->getProjectId());
+
+if (empty($flex_data)) {
+    ?>
+    <div class="red" style="text-align: center"><b>You have no applicants under review.</b> </div>
+    <?php
+    exit;
+}
+
+
+
+//do a datatable version
+$review_grid = $module->generateReviewGrid($sunet_id, $flex_data);
+
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>MCHRI Application Review</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+
+<!-- Bootstrap core CSS -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.10.20/datatables.min.css"/>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+<link rel="stylesheet" type="text/css" href="<?php echo $module->getUrl("css/mchri.css") ?>" />
+<script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.20/datatables.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.4.1/js/bootstrap-datepicker.min.js"></script>
+</head>
+<body>
+<header class="header-global">
+    <nav class="container">
+        <a class="som-logo" href="http://med.stanford.edu">Stanford Medicine</a>
+    </nav>
+</header>
+<div class="container">
+    <h3 style="text-align: center">Applicant Review for <?php echo $sunet_id ?> </h3>
+    <br>
+    <form method="POST" id="reviewer_update_form" action="">
+    <?php print $review_grid;?>
+    </form>
+</div>
+
+</body>
+<script type="text/javascript">
+
+
+    function redirectToSurvey(survey_link, return_code) {
+        var foo = "<?php echo $return_code; ?>";
+
+        console.log("foo: "+survey_link);
+        console.log("foo: "+return_code);
+
+        var newForm = $('<form>', {
+            'method': 'POST',
+            'action': survey_link
+        }).append($('<input>', {
+            'name': '__code',
+            'value': return_code,
+            'type': 'hidden'
+        })).appendTo('body');
+        newForm.submit();
+
+    };
+
+    $(document).ready(function() {
+        $('#review_table').DataTable( {
+            "dom": '<f<t>i>'
+        } );
+
+
+
+    });
+</script>
+</html>
+
+
