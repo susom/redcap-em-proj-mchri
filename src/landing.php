@@ -25,7 +25,7 @@ if (isset($_POST['download'])) {
 
     $edoc_id = $_POST['edoc_id'];
     $dl_status = $module->downloadfile($edoc_id);
-    $module->emDebug("downlaod status is ". $dl_status_);
+
     if ($dl_status == true) {
         $result = array(
             'result' => 'success',
@@ -80,7 +80,7 @@ $review_grid = $module->generateReviewGrid($sunet_id, $flex_data);
 <body>
 <header class="header-global">
     <nav class="container">
-        <a class="som-logo" href="http://med.stanford.edu">Stanford Medicine</a>
+        <a class="som-logo" href="http://med.stanford.edu/mchri.html">Stanford Medicine</a>
     </nav>
 </header>
 <div class="container-fluid">

@@ -129,47 +129,6 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
     /* REVIEWER LANDING PAGE METHODS                                                                                                    */
     /***************************************************************************************************************** */
 
-    function downloadfile($edoc_id) {
-
-        $pid = $this->getProjectId();
-
-        $sql = "select * from redcap_edocs_metadata where doc_id = '" . $edoc_id . "' and delete_date is null";
-        if (!empty($pid)) {
-            $sql .= " and project_id = " . db_escape($pid);
-        }
-        $q = db_query($sql);
-        $this->emDebug($sql);
-        $this_file = db_fetch_assoc($q);
-
-        //Download from "edocs" folder (use default or custom path for storage)
-        $local_file = EDOC_PATH . $this_file['stored_name'];
-
-        $this->emDebug("locaal file $local_file exitst: ".file_exists($local_file) );
-        $this->emDebug("locaal file $local_file is_File: ".is_file($local_file) );
-
-        if (file_exists($local_file) && is_file($local_file)) {
-
-                header('Pragma: anytextexeptno-cache', true);
-//            header('Content-Type: application/octet-stream"');
-                header('Content-Type: ' . $this_file['mime_type'] . '; name="' . $this_file['doc_name'] . '"');
-                header('Content-Disposition: attachment; filename="' . $this_file['doc_name'] . '"');
-            //header('Content-Length: ' . filesize($local_file));
-                ob_end_flush();
-                readfile_chunked($local_file);
-
-            $this->emDebug("Just completed download: Reviewer portal: Review filedown loaded by for project: $local_file with type ".  $this_file['mime_type']);
-            $this->emDebug("file is $local_file with filename is " . $this_file['doc_name']);
-            return true;
-        } else {
-            return false;
-            $this->emError('<b>ERROR</b> The file <b>"' . $local_file .
-                '"</b> ("' . $this_file['doc_name'] . '") ' . 'does not exist!');
-        }
-
-
-
-    }
-
     function generateReviewGrid($sunet_id, $data) {
 
         $select = array("record_id", "program", "fy", "cycle", "applicant_name", "dept", "division",
@@ -326,7 +285,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
             foreach ($this_row as $col_key => $this_col) {
 
                 // Check for custom fieldtype
-                if (array_key_exists('CUSTOM', $this_col) === true) {
+                if (is_array($this_col)  && (array_key_exists('CUSTOM', $this_col) === true)) {
                     $field_type = $this_col['CUSTOM'];
                     $data = $this_col['DATA'];
                     $display = $this_col['DISPLAY'];
