@@ -3,18 +3,17 @@ select.form-control {
 }
 
 header.header-global{
-    background-color: #A00000;
+    background-color: #4099ff00000;
     margin-bottom:60px;
 }
 
 .header-global nav a.som-logo{
-    background: url(https://med.stanford.edu/etc/clientlibs/sm/mauna-kea/images/SM-Logo.svg) no-repeat #ffffff center center;
     border-right: none;
     text-indent: -9999px;
     display: inline-block;
     width: 300px;
     /* width: 14.285714285714286rem; */
-    height: 60px;
+    height: 70px;
     height: 4.285714285714286rem;
     background-size: 90%;
 }
@@ -28,7 +27,7 @@ header.header-global{
     display:none;
 }
 
-#review_table {
+#review_table #reviewer_update_form #review_table_wrapper {
     margin: 20px 50px 20px 20px;
     width: 100%;
     autoWidth: false;

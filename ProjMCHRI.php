@@ -27,7 +27,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
             ?>
             <script type="text/javascript">
                 $(document).ready(function () {
-                    var btn = '<button id="print_button" class="btn btn-primary pull-right hidden-print" onclick="window.print();"><span class="glyphicon glyphicon-print" aria-hidden="true"></span> Print</button>';
+                    var btn = '<button id="print_button" class="btn btn-primary pull-right hidden-print" onclick="window.print();"><span class="glyphicon glyphicon-print" aria-hidden="true"></span> Print Form</button>';
                     $('.surveysubmit').after(btn);
                 });
             </script>
@@ -35,18 +35,99 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
         }
     }
 
+    public function redcap_data_entry_form_top($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance) {
 
-    public function redcap_save_record($project_id, $record = NULL, $instrument, $event_id, $group_id = NULL, $survey_hash = NULL, $response_id = NULL, $repeat_instance) {
-        //
-        $this->emDebug("Just saved $instrument in instance $repeat_instance");
+        if (in_array($instrument, array('admin_reviewer_reminders')) AND $event_id == $this->getFirstEventId()) {
+            //get reviewers for this record
+            $reviewer_fields = array('reviewer_1', 'reviewer_2','reviewer_3', 'reviewer_4','reviewer_5');
+            $reviewer_fields = $this->getReviewerFields();
+            $q = REDCap::getData('json',$record,$reviewer_fields,$event_id);
+            $results = json_decode($q,true);
+            $result = $results[0];
 
-        //on save of admin_review form, trigger email to admin to verify the training
-        //or Reset to new event instance
-        if ($instrument == $this->framework->getProjectSetting('admin-review-form')) {
+            $data = array();
+            foreach ($reviewer_fields as $candidate) {
+                if (!empty($result[$candidate])) {
+                    //check existing data for this reviewer
+                    $already_assigned = filterForReviewer($result[$candidate], $event_id, $record);
+
+                    $data[$candidate . '_sunet'] = $result[$candidate];
+                    $data[$candidate . '_assigned'] = $already_assigned;
+                } else {
+                    $data[$candidate . '_sunet'] = null;
+                    $data[$candidate . '_assigned'] = null;
+                }
+
+            }
+
+            //now display the reviewer report in the field
+            ?>
+            <script type='text/javascript'>
+                $(document).ready(function() {
+
+                    $('#reviewer_1_assigned').val(<?php print json_encode($data['reviewer_1_assigned']); ?>);
+                    $('#reviewer_2_assigned').val(<?php print json_encode($data['reviewer_2_assigned']); ?>);
+                    $('#reviewer_3_assigned').val(<?php print json_encode($data['reviewer_3_assigned']); ?>);
+                    $('#reviewer_4_assigned').val(<?php print json_encode($data['reviewer_4_assigned']); ?>);
+                    $('#reviewer_5_assigned').val(<?php print json_encode($data['reviewer_5_assigned']); ?>);
+                    $('#reviewer_6_assigned').val(<?php print json_encode($data['reviewer_6_assigned']); ?>);
+
+                    $('input[name="reviewer_1_sunet"]').val('<?php print ($data['reviewer_1_sunet']);  ?>').blur();
+                    $('input[name="reviewer_2_sunet"]').val('<?php print ($data['reviewer_2_sunet']);  ?>').blur();
+                    $('input[name="reviewer_3_sunet"]').val('<?php print ($data['reviewer_3_sunet']);  ?>').blur();
+                    $('input[name="reviewer_4_sunet"]').val('<?php print ($data['reviewer_4_sunet']);  ?>').blur();
+                    $('input[name="reviewer_5_sunet"]').val('<?php print ($data['reviewer_5_sunet']);  ?>').blur();
+                    $('input[name="reviewer_6_sunet"]').val('<?php print ($data['reviewer_6_sunet']);  ?>').blur();
+                    console.log("Done!");
+
+                });
+            </script>
+
+            <?php
 
         }
     }
 
+    public function redcap_every_page_top() {
+        // The goal of this hook is to prevent save-and-return-late from sending emails to the designated email address
+        if (PAGE == "surveys/index.php" AND isset($_GET['__return'])) {
+            // We want to prevent the end of survey email from getting triggered via an ajax call.
+            // \Plugin::log("Injecting Proxy Hook!","DEBUG",__FUNCTION__);
+            ?>
+            <script>
+
+                // Override the redcap_validate with an anonymous function
+                (function () {
+                    // Cache the original function under another name
+                    var proxied = emailReturning;
+
+                    // Redefine the original
+                    emailReturning = function () {
+                        // Examine the arguments to this function so you can do your own thing:
+
+                        // If provideEmail is visible, then honor request
+                        if ( $('#provideEmail').is(":visible") ) {
+                            // Do the original proxied function
+                            $result = proxied.apply(this, arguments);
+                        } else {
+                            // Suppress the autoEmail and make the provideEmail visible
+                            $('#autoEmail').hide();
+                            $('#provideEmail').show();
+                            $result = false;
+                        }
+                        return $result;
+                    }
+                })()
+
+            </script>
+            <?php
+        }
+
+    }
+
+    /*******************************************************************************************************************/
+    /* REVIEWER LANDING PAGE METHODS                                                                                                    */
+    /***************************************************************************************************************** */
 
     function downloadfile($edoc_id) {
 
@@ -62,27 +143,31 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
 
         //Download from "edocs" folder (use default or custom path for storage)
         $local_file = EDOC_PATH . $this_file['stored_name'];
-        //$local_file = 'foo.txt';
+
         $this->emDebug("locaal file $local_file exitst: ".file_exists($local_file) );
         $this->emDebug("locaal file $local_file is_File: ".is_file($local_file) );
 
         if (file_exists($local_file) && is_file($local_file)) {
 
-            header('Pragma: anytextexeptno-cache', true);
-            header('Content-Type: ' . $this_file['mime_type'] . '; name="' . $this_file['doc_name'] . '"');
-            header('Content-Disposition: attachment; filename="' . $this_file['doc_name'] . '"');
-            ob_end_flush();
-            readfile_chunked($local_file);
-            //readfile($local_file);
-            //sleep(5);
-            $this->emDebug("Just completed download: Reviewer portal: Review filedown loaded by ".$sunet_id . " for project: $local_file");
+                header('Pragma: anytextexeptno-cache', true);
+//            header('Content-Type: application/octet-stream"');
+                header('Content-Type: ' . $this_file['mime_type'] . '; name="' . $this_file['doc_name'] . '"');
+                header('Content-Disposition: attachment; filename="' . $this_file['doc_name'] . '"');
+            //header('Content-Length: ' . filesize($local_file));
+                ob_end_flush();
+                readfile_chunked($local_file);
 
+            $this->emDebug("Just completed download: Reviewer portal: Review filedown loaded by for project: $local_file with type ".  $this_file['mime_type']);
+            $this->emDebug("file is $local_file with filename is " . $this_file['doc_name']);
+            return true;
         } else {
-            die('<b>' . $lang['global_01'] . $lang['colon'] . '</b> ' . $lang['file_download_08'] . ' <b>"' . $local_file .
-                '"</b> ("' . $this_file['doc_name'] . '") ' . $lang['file_download_09'] . '!');
+            return false;
+            $this->emError('<b>ERROR</b> The file <b>"' . $local_file .
+                '"</b> ("' . $this_file['doc_name'] . '") ' . 'does not exist!');
         }
 
-        $this->emDebug("file is $local_file with filename is " . $this_file['doc_name']);
+
+
     }
 
     function generateReviewGrid($sunet_id, $data) {
@@ -99,10 +184,6 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                 $id = $row['record_id'];
                 $item = $row[$k_item];
                 switch ($k_item) {
-                    case "reviewer":
-
-                        $table_data[$id][$k_item] = array('CUSTOM' => 'plain', 'DISPLAY' => $cell);
-                        break;
                     case "budget":
                         if ($item == null) {
                             $table_data[$id][$k_item] = null;
@@ -133,7 +214,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
 
                         //$cell = "<a href= ".$survey_link." target='_blank'>".$item."</a>";
                         $cell =
-                            '<input id="redirect_survey_' . $item . '" type="button" class="btn btn-default" value="' . $item . '" onclick="redirectToSurvey(\'' . $survey_link . '\',\'' . $return_code . '\');" />';
+                            '<input id="redirect_survey_' . $item . '" type="button" class="btn btn-primary" value="Go to ' . $item . '" onclick="redirectToSurvey(\'' . $survey_link . '\',\'' . $return_code . '\');" />';
 
 
                         $table_data[$id][$k_item] = array('CUSTOM' => 'plain', 'DISPLAY' => $cell);
@@ -243,14 +324,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
 
             // Plugin::log(" THIS ROW ".print_r($this_row, true));
             foreach ($this_row as $col_key => $this_col) {
-                // if (isset($this_col['CUSTOM']) === true || empty($this_col['CUSTOM']) === false) {
-                // Plugin::log($this_col['CUSTOM'], "DEBUG", " this_col[custom] ");
-                // Plugin::log((array_key_exists('CUSTOM', $this_col)), "DEBUG", "ARRAY_KEY_EXISTS(custom, this_col)");
-                // Plugin::log((array_key_exists('CUSTOM', $this_col) === true), "DEBUG", "ARRAY_KEY_EXISTS(custom, this_col) === true");
-                // Plugin::log((isset($this_col['CUSTOM']) === true), "DEBUG", "isset(this_col['CUSTOM']===true ");
-                // Plugin::log((empty($this_col['CUSTOM']) === false), "DEBUG", "empty(this_col['CUSTOM']) === false");
-                // Plugin::log($this_col, "DEBUG", "THIS_COL");
-                // }
+
                 // Check for custom fieldtype
                 if (array_key_exists('CUSTOM', $this_col) === true) {
                     $field_type = $this_col['CUSTOM'];
@@ -311,7 +385,22 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
     }
 
     /**
-     * return array of all the reviewer arrays
+     * return array of all the reviewer fields
+     * @return array
+     */
+    function getReviewerFields() {
+        $reviewer_fields = array();
+
+        $reviewer_list = $this->getSubSettings('reviewer-list');
+
+        foreach ($reviewer_list as $k =>  $r_field) {
+            $reviewer_fields[$r_field['reviewer-field']];
+        }
+        return $reviewer_fields;
+    }
+
+    /**
+     * return array of all the reviewer event ids
      * @return array
      */
     function getReviewerEvents() {
@@ -538,8 +627,10 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
 
         $this->emDebug($href);
 
-        //$cell =  '<a target="_blank" id="'.$fieldname.'" name="'.$fieldname.'" href="'.$href.'" class="btn btn-default">Download</a>';
-        $cell = '<button type="submit" id="'.$fieldname.'" name="'.$fieldname.'" class="btn btn-primary btn-block" value="true">Download</button>';
+        $cell =  '<a target="_blank" id="'.$fieldname.'" name="'.$fieldname.'" href="'.$href.'" class="btn btn-primary">Download</a>';
+        //$cell = '<button type="submit" id="'.$fieldname.'" name="'.$fieldname.'" class="btn btn-primary btn-block" value="true">Download</button>';
+        //$cell = '<button type="submit" id="'.$fieldname.'" name="download" data-id="'.$edoc_id.'" class="btn btn-primary btn-block" value="'.$fieldname.'">Download</button>';
+        //$cell = '<button type="submit" id="'.$fieldname.'"  name="download" data-id="'.$edoc_id.'" class="btn btn-primary btn-block btn-download" value="true">Download</button>';
 
         return $cell;
     }

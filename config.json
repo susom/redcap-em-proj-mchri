@@ -18,8 +18,9 @@
 	],
 
 	"permissions": [
-		"redcap_save_record",
-		"redcap_survey_page_top"
+		"redcap_survey_page_top",
+		"redcap_data_entry_form_top",
+		"redcap_data_every_page_top"
 	],
 
 	"links": {

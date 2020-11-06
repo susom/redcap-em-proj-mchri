@@ -20,16 +20,23 @@ if (!isset($sunet_id) && !$debug) {
     die("SUNet ID was not available. Please webauth in and try again!");
 }
 
-if (isset($_POST['budget_worksheet'])) {
-    $module->emDebug("dowoading file");
+if (isset($_POST['download'])) {
+    $module->emDebug("About to download downloading file");
 
-    $edoc_id = "1588";
+    $edoc_id = $_POST['edoc_id'];
     $dl_status = $module->downloadfile($edoc_id);
-
-
-    $result = array(
-        'result' => 'success'
-    );
+    $module->emDebug("downlaod status is ". $dl_status_);
+    if ($dl_status == true) {
+        $result = array(
+            'result' => 'success',
+            'msg' => 'Succesfully downloaded'
+        );
+    } else {
+        $result = array(
+            'result' => 'fail',
+            'msg' => 'Not able to download'
+        );
+    }
 
     header('Content-Type: application/json');
     print json_encode($result);
@@ -68,6 +75,7 @@ $review_grid = $module->generateReviewGrid($sunet_id, $flex_data);
 <script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.20/datatables.min.js"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.4.1/js/bootstrap-datepicker.min.js"></script>
+<script type='text/javascript' src='<?php echo $module->getUrl("js/mchri.js")?>'></script>
 </head>
 <body>
 <header class="header-global">
@@ -75,7 +83,7 @@ $review_grid = $module->generateReviewGrid($sunet_id, $flex_data);
         <a class="som-logo" href="http://med.stanford.edu">Stanford Medicine</a>
     </nav>
 </header>
-<div class="container">
+<div class="container-fluid">
     <h3 style="text-align: center">Applicant Review for <?php echo $sunet_id ?> </h3>
     <br>
     <form method="POST" id="reviewer_update_form" action="">
@@ -114,6 +122,20 @@ $review_grid = $module->generateReviewGrid($sunet_id, $flex_data);
 
     });
 </script>
+<style>
+    .header-global nav a.som-logo{
+        background:url(<?php echo $module->getUrl("img/MCHRI_Logo_LeftAligned_TwoColor.png") ?>) 50% 50% no-repeat;
+        border-right: none;
+        text-indent: -9999px;
+        display: inline-block;
+        width: 300px;
+        /* width: 14.285714285714286rem; */
+        height: 120px;
+        height: 4.285714285714286rem;
+        background-size: 90%;
+    }
+</style>
+
 </html>
 
 
