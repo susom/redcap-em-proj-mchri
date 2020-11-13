@@ -459,7 +459,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
             'filterLogic'   => $filter
         );
 
-        $this->emDebug("sunet search params are", $params);
+        //$this->emDebug("sunet search params are", $params);
         $reviewer_array = REDCap::getData($params);  // this is the array of records which have the sunet id as a reviewer
 
         //need to split out the get intwo two gets because with a filter, it only seems to return the first event
@@ -478,9 +478,11 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
             'fields'        => $table_col,
             'records'       => array_keys($reviewer_array)
         );
-        $this->emDebug("record search params are", $params);
+        //$this->emDebug("record search params are", $event_params);
         //filter limits to records where the sunet_id is a reviewer
         $q = REDCap::getData($event_params);
+
+        $this->emDebug("found ". count($q) . " records for which $target_sunet is the reviewer.");
 
 
         $results = json_decode($q,true);
@@ -513,7 +515,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
 
             // if the review has been marked complete, don't add to table. 'review_marked_complete' is field checked by reviewer in chri_reviewer_form
             if ($complete_status == 1) {
-                break;
+                continue;
             }
 
             $array = array(
@@ -562,7 +564,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
         $href =$download_url.'?id='.$edoc_id.'&pid='.$project_pid.'&record='.$record.'&event_id='.$event_id.
             '&field_name='.$fieldname.'&instance=1'.'&sunet_id='.$sunet_id.'&edoc_id='.$edoc_id;
 
-        $this->emDebug($href);
+        //$this->emDebug($href);
 
         $cell =  '<a target="_blank" id="'.$fieldname.'" name="'.$fieldname.'" href="'.$href.'" class="btn btn-primary">Download</a>';
         //$cell = '<button type="submit" id="'.$fieldname.'" name="'.$fieldname.'" class="btn btn-primary btn-block" value="true">Download</button>';

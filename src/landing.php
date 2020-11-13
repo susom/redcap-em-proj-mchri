@@ -5,7 +5,7 @@ namespace Stanford\ProjMCHRI;
 
 use REDCap;
 
-$module->emDebug("Starting MCHRI landing page for project $pid");
+
 
 $sunet_id = $_SERVER['WEBAUTH_USER'];
 //$sunet_id = 'soda';
@@ -13,7 +13,7 @@ $debug    = $module->getProjectSetting('test');
 
 if ($debug) { $sunet_id = 'test3';}
 
-
+$module->emDebug("Starting MCHRI landing page for project $pid for reviewer $sunet_id");
 
 //if sunet ID not set leave
 if (!isset($sunet_id) && !$debug) {
