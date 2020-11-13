@@ -131,7 +131,7 @@ $review_grid = $module->generateReviewGrid($sunet_id, $flex_data);
         width: 300px;
         /* width: 14.285714285714286rem; */
         height: 120px;
-        height: 4.285714285714286rem;
+        height: 4.5rem;
         background-size: 90%;
     }
 </style>

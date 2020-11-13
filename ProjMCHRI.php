@@ -436,6 +436,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
         $first_event_name = REDCap::getEventNames(true, false, $first_event);
 
 
+        //first get list of record ids which have the suentID as a reviewer
         //create filter to get only rows where sunet is a reviewer
         $filter = "";
         $i = count($reviewer_list);
@@ -448,28 +449,43 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                 $filter .= " OR ";
             }
         }
+        $rec_id = $this->framework->getRecordId();
+        $rec_id = 'record_id';
+
+        $params = array(
+            'project_id'    => $this->getProjectId(),
+            'return_format' => 'array',
+            'fields'        => array($rec_id),
+            'filterLogic'   => $filter
+        );
+
+        $reviewer_array = REDCap::getData($params);  // this is the array of records which have the sunet id as a reviewer
+
+        //need to split out the get intwo two gets because with a filter, it only seems to return the first event
+        //we need the reviewer event to get the status
 
         $table_col = array("record_id","program","fy","cycle","applicant_name","dept","division",
             "reviewer_1","reviewer_2","reviewer_3","reviewer_4","reviewer_5","reviewer_6",
             "budget_worksheet","chri_proposal","review_marked_complete");
 
-        $params = array(
+
+        //Using the reviewer list, get the data from the reviewer events
+
+        $event_params = array(
             'project_id'    => $this->getProjectId(),
             'return_format' => 'array',
-            //'events'        =>  $event_filter_str,
             'fields'        => $table_col,
-            'filterLogic'   => $filter
+            'records'       => array_keys($reviewer_array)
         );
 
-        $q = REDCap::getData($params);
-
-
+        //filter limits to records where the sunet_id is a reviewer
+        $q = REDCap::getData($event_params);
+        $results = json_decode($q,true);
 
         //i should replace this with a sql query where it retrieves only the records where the sunet is a reviewer in any of the reviewer slot
-        $result = REDCap::getData($pid, 'array', null, $table_col, null, null);
-        // print "<pre>".print_r($result,true)."</pre>"; exit;
-        // print "<pre>".print_r($result[382],true)."</pre>";
+        //$result = REDCap::getData($pid, 'array', null, $table_col, null, null);
 
+        //iterate over the each of the records
         foreach ($q as $key => $all) {
 
             // the assignment of reviewer is in the first EVENT
@@ -487,57 +503,16 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                 break;
             }
 
+            //$found will look like 'reviewer_1'.  Need to get the reviewer event id. infer it from the reviewer fieldname
             $reviewer_event    = $found.'_arm_1';
             $reviewer_event_id = REDCap::getEventIdFromUniqueEvent($reviewer_event);
-            $complete_status   = $value[$reviewer_event_id]['review_marked_complete'][1];
+            $complete_status   = $all[$reviewer_event_id]['review_marked_complete'][1];
 
-            // if found completed, don't add to table
+            // if the review has been marked complete, don't add to table. 'review_marked_complete' is field checked by reviewer in chri_reviewer_form
             if ($complete_status == 1) {
-                continue;
+                break;
             }
 
-            /**
-                // original method
-            $allowed = array($value['reviewer_1'],$value['reviewer_2'],$value['reviewer_3'],$value['reviewer_4'],$value['reviewer_5'],$value['reviewer_6']);
-
-            if (in_array($target_sunet, $allowed, false)) {
-                foreach ($allowed as $position => $taken) {
-
-                    if (isset($taken) && ($taken == $target_sunet)) {
-                        // sunet is a reviewer for this record
-                        $reviewer_num = $position + 1;
-
-                        // if it is complete, exclude
-                        $unique_event = 'reviewer_' . $reviewer_num . '_arm_1';
-                        $event_id = REDCap::getEventIdFromUniqueEvent($unique_event);
-                        //print "<pre> recid: {$value['record_id']}  sunet: $target_sunet  taken:$taken event: $event_id key : $key is in reviewer_num $reviewer_num " . print_r($allowed, true) . "</pre>";
-
-                        $complete_status = $all[$event_id]['review_marked_complete'][1];
-                        //print "<pre> all[event_Id]: $complete_status :  " . print_r($all[$event_id]['review_marked_complete'][1], true) . "</pre>";
-
-                        if ($complete_status == 1) {
-                            // this record is already completed, skip it.
-                            //print "COMPLETED so stop looking for more reviewer status for event $event_id for $key";
-                            // stop looking for reviewers
-                            break;
-                        }
-
-                    }
-
-                }
-
-                // if found completed, exit record search
-                //print "<br><pre> COMPLETED:  $key: completion status is $complete_record </pre>";
-                if ($complete_status == 1) {
-                    continue;
-                }
-
-            } else {
-                // print "<pre>{$value['record_id']} skipping $target_sunet in ".print_r($allowed, true)."</pre>";
-                continue;
-            }
-*/
-            //print "<br>ENTERING for recordid $key and reviewer_num $reviewer_num";
             $array = array(
                 "record_id"             =>$key,
                 "review_marked_complete"=> $complete_status ,  //$value['review_marked_complete']['1'],

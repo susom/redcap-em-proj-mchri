@@ -7,16 +7,6 @@ header.header-global{
     margin-bottom:60px;
 }
 
-.header-global nav a.som-logo{
-    border-right: none;
-    text-indent: -9999px;
-    display: inline-block;
-    width: 300px;
-    /* width: 14.285714285714286rem; */
-    height: 70px;
-    height: 4.285714285714286rem;
-    background-size: 90%;
-}
 
 .header-global b{
     float: right;
