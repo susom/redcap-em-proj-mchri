@@ -459,6 +459,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
             'filterLogic'   => $filter
         );
 
+        $this->emDebug("sunet search params are", $params);
         $reviewer_array = REDCap::getData($params);  // this is the array of records which have the sunet id as a reviewer
 
         //need to split out the get intwo two gets because with a filter, it only seems to return the first event
@@ -477,9 +478,11 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
             'fields'        => $table_col,
             'records'       => array_keys($reviewer_array)
         );
-
+        $this->emDebug("record search params are", $params);
         //filter limits to records where the sunet_id is a reviewer
         $q = REDCap::getData($event_params);
+
+
         $results = json_decode($q,true);
 
         //i should replace this with a sql query where it retrieves only the records where the sunet is a reviewer in any of the reviewer slot

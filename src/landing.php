@@ -96,7 +96,6 @@ $review_grid = $module->generateReviewGrid($sunet_id, $flex_data);
 
 
     function redirectToSurvey(survey_link, return_code) {
-        var foo = "<?php echo $return_code; ?>";
 
         console.log("foo: "+survey_link);
         console.log("foo: "+return_code);
