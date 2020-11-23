@@ -18,7 +18,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
     use emLoggerTrait;
 
     /*******************************************************************************************************************/
-    /* HOOK METHODS                                                                                                    */
+    /* HOOK METHODS  - migrated from hook for pid10466                                                                 */
     /***************************************************************************************************************** */
 
     public function redcap_survey_page_top($project_id, $record, $instrument, $event_id, $group_id, $survey_hash, $response_id, $repeat_instance = 1 ) {
@@ -39,7 +39,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
 
         if (in_array($instrument, array('admin_reviewer_reminders')) AND $event_id == $this->getFirstEventId()) {
             //get reviewers for this record
-            $reviewer_fields = array('reviewer_1', 'reviewer_2','reviewer_3', 'reviewer_4','reviewer_5');
+            //$reviewer_fields = array('reviewer_1', 'reviewer_2','reviewer_3', 'reviewer_4','reviewer_5');
             $reviewer_fields = $this->getReviewerFields();
             $q = REDCap::getData('json',$record,$reviewer_fields,$event_id);
             $results = json_decode($q,true);
@@ -49,7 +49,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
             foreach ($reviewer_fields as $candidate) {
                 if (!empty($result[$candidate])) {
                     //check existing data for this reviewer
-                    $already_assigned = filterForReviewer($result[$candidate], $event_id, $record);
+                    $already_assigned = $this->filterForReviewer($result[$candidate], $event_id, $record);
 
                     $data[$candidate . '_sunet'] = $result[$candidate];
                     $data[$candidate . '_assigned'] = $already_assigned;
@@ -124,6 +124,102 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
         }
 
     }
+
+    /*******************************************************************************************************************/
+    /* HELPER METHODS FOR HOOKS                                                                                        */
+    /***************************************************************************************************************** */
+
+
+    /**
+     * @param $reviewer
+     * @param $event_id
+     */
+    function filterForReviewer($reviewer, $event_id, $current_id) {
+        //Plugin::log($reviewer, "DEBUG","LOOKING FOR ");
+        //get event name from the $event_id
+        $event = REDCap::getEventNames(true, true,$event_id);
+
+        //get all the other records where $reviewer is a reviewer
+        //filter for this reviewer in all the reviewer fields
+        $filter = "[{$event}][reviewer_1] = '{$reviewer}'";
+        $filter .= " OR [{$event}][reviewer_2] = '{$reviewer}'";
+        $filter .= " OR [{$event}][reviewer_3] = '{$reviewer}'";
+        $filter .= " OR [{$event}][reviewer_4] = '{$reviewer}'";
+        $filter .= " OR [{$event}][reviewer_5] = '{$reviewer}'";
+        $filter .= " OR [{$event}][reviewer_6] = '{$reviewer}'";
+        //Plugin::log($filter, "DEBUG", "FILTER");
+
+        //$reviewer_fields = array('reviewer_1', 'reviewer_2','reviewer_3', 'reviewer_4','reviewer_5');
+        $reviewer_fields = $this->getReviewerFields();
+
+        $send_fields = array(REDCap::getRecordIdField(),
+            'send_reviewer_1', 'send_reviewer_2','send_reviewer_3', 'send_reviewer_4','send_reviewer_5', 'send_reviewer_6',
+            'send_reviewer_1_5_wk_reminder','send_reviewer_2_5_wk_reminder','send_reviewer_3_5_wk_reminder','send_reviewer_4_5_wk_reminder','send_reviewer_5_5_wk_reminder',
+            'send_reviewer_1_2_wk_reminder','send_reviewer_2_2_wk_reminder','send_reviewer_3_2_wk_reminder','send_reviewer_4_2_wk_reminder','send_reviewer_5_2_wk_reminder',
+            'send_reviewer_1_1_wk_reminder','send_reviewer_2_1_wk_reminder','send_reviewer_3_1_wk_reminder','send_reviewer_4_1_wk_reminder','send_reviewer_5_1_wk_reminder');
+        $get_fields = array_merge($reviewer_fields, $send_fields);
+
+        //construct the filed list of fields to get dat for
+        foreach ($reviewer_fields as $candidate) {
+            //add fields
+            $get_fields_2[] = $candidate;
+            $get_fields_2[] = 'send_'.$candidate;
+            $get_fields_2[] = 'send_'.$candidate.'_5_wk_reminder';
+            $get_fields_2[] = 'send_'.$candidate.'_2_wk_reminder';
+            $get_fields_2[] = 'send_'.$candidate.'_1_wk_reminder';
+        }
+
+        $records = REDCap::getData('array', null, $get_fields, null, null, false, false, false, $filter);
+        //Plugin::log($records, "DEBUG", "FILTER FOR REVIEW ALL RECORDS");
+
+        $complete_review_records = REDCap::getData('array', null, array('review_marked_complete'));
+        //Plugin::log($complete_review_records, "DEBUG", "COMPLETION STATUS REVIEW ALL RECORDS");
+
+        $str = '';
+        foreach ($records as $v) {
+            $rec_id = $v[$event_id]['record_id'];
+
+            //Plugin::log($v[$event_id], "DEBUG", "Looking for reviewer $reviewer in ========RECORD ID: ".$rec_id);
+
+            //If it's current record, then don't report
+            if ($current_id == $rec_id) continue;
+
+            //locate the reviewer position for this reviewer? is this reviewer_1, reviewer_2, etc?
+            $reviewer_position = '';
+            foreach ($reviewer_fields as $k) {
+                if ($v[$event_id][$k] == $reviewer) {
+                    $reviewer_position = $k;
+                    //Plugin::log($k, "DEBUG", "FOUND Reviewer position for $reviewer");
+                    break;
+                }
+            }
+
+            //Check if the review is complete for this $reviewer in this $reviewer_position, if it is, continue
+            $reviewer_event = REDCap::getEventIdFromUniqueEvent($reviewer_position.'_arm_1');
+            //Plugin::log($complete_review_records[$rec_id],"DEBUG", "REVIEWER FOR THIS RECORD");
+            $review_complete = $complete_review_records[$rec_id][$reviewer_event]['review_marked_complete']['1'];
+            //Plugin::log($reviewer_event, "DEBUG", "Reviewer event for ".$reviewer);
+            //Plugin::log($review_complete, "DEBUG", "Reviewer complete ");
+            if ($review_complete == '1') {
+                //$str.="COMPLETED \t";
+                continue;
+            }
+
+            //Plugin::log($v[$event_id],"DEBUG", "$rec_id: SEND STATUS for $reviewer in $reviewer_position");
+            $send_status = $v[$event_id]['send_'.$reviewer_position][1] ? 'Yes' : 'No';
+            $send_status_5_wk = $v[$event_id]['send_'.$reviewer_position.'_5_wk_reminder'][1] ? 'Yes' : 'No';
+            $send_status_2_wk = $v[$event_id]['send_'.$reviewer_position.'_2_wk_reminder'][1] ? 'Yes' : 'No';
+            $send_status_1_wk = $v[$event_id]['send_'.$reviewer_position.'_1_wk_reminder'][1] ? 'Yes' : 'No';
+
+            $str .="$rec_id: Already a reviewer for $rec_id.\t";
+            $str .="Sent reviewer email?: ".$send_status."\t";
+            $str .="Sent 5 wk?: ".$send_status_5_wk."\t";
+            $str .="Sent 2 wk?: ".$send_status_2_wk."\t";
+            $str .="Sent 1 wk?: ".$send_status_1_wk."\n";
+        }
+        return $str;
+    }
+
 
     /*******************************************************************************************************************/
     /* REVIEWER LANDING PAGE METHODS                                                                                                    */
@@ -353,7 +449,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
         $reviewer_list = $this->getSubSettings('reviewer-list');
 
         foreach ($reviewer_list as $k =>  $r_field) {
-            $reviewer_fields[$r_field['reviewer-field']];
+            $reviewer_fields[] = $r_field['reviewer-field'];
         }
         return $reviewer_fields;
     }
