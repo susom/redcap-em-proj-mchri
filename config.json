@@ -46,8 +46,7 @@
 	},
 
 	"no-auth-pages": [
-		"src/landing",
-		"src/ResetCron"
+		"src/landing"
 	],
 
 	"system-settings": [
@@ -67,12 +66,6 @@
 			"type": "checkbox"
 		},
 		{
-			"key": "test",
-			"name": "<b>TESTING : check if in testing mode</b>",
-			"required": false,
-			"type": "checkbox"
-		},
-		{
 			"key": "reviewer-list",
 			"name": "List of Reviewer Fields",
 			"required": true,
@@ -88,37 +81,16 @@
 			]
 		},
 		{
-			"key": "report-field-list",
-			"name": "List of Fields for the Meeting Report",
-			"required": true,
-			"type": "sub_settings",
-			"repeatable":true,
-			"sub_settings":[
-				{
-					"key": "report-field",
-					"name": "Report Field - add fields in sequence desired.",
-					"required": true,
-					"type": "field-list"
-				}
-			]
-		},
-		{
-			"key": "log-send-desc",
-			"name": "<div class='alert alert-success'><h3 class='text-center'>Settings for email send logs and timestamps</h3><br>Fields use to log timestamps of alerta sent</div>",
-			"required": false,
-			"type": "descriptive"
-		},
-		{
-			"key": "allow-multiple-emails",
-			"name": "<b>Allow multiples emails sent to learners / admin on a single day.  If unchecked, learners and admin will only receive a single email a day.</i>",
+			"key": "test",
+			"name": "<b>TESTING : check if in testing mode</b>",
 			"required": false,
 			"type": "checkbox"
 		},
 		{
-			"key": "admin-review-form",
-			"name": "<b>ADMIN: Last Alert Template Field</b><br>Select Field to log last Alert Template sent",
+			"key": "test-user",
+			"name": "<b>ADMIN USE ONLY : field for testing mode</b>",
 			"required": false,
-			"type": "form-list"
+			"type": "text"
 		}
 	],
 	"compatibility": {

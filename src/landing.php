@@ -9,9 +9,16 @@ use REDCap;
 
 $sunet_id = $_SERVER['WEBAUTH_USER'];
 //$sunet_id = 'soda';
-$debug    = $module->getProjectSetting('test');
 
-if ($debug) { $sunet_id = 'test3';}
+$debug = $module->getProjectSetting('test');
+if ($debug) {
+
+    if (SUPER_USER) {
+        $sunet_id = $module->getProjectSetting('test-user');
+        $module->emDebug("User " . $sunet_id . "  is a superuser and is mimicking $sunet_id.");
+    }
+
+}
 
 $module->emDebug("Starting MCHRI landing page for project $pid for reviewer $sunet_id");
 
