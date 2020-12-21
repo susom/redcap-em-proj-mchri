@@ -189,23 +189,19 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
             foreach ($reviewer_fields as $k) {
                 if ($v[$event_id][$k] == $reviewer) {
                     $reviewer_position = $k;
-                    //Plugin::log($k, "DEBUG", "FOUND Reviewer position for $reviewer");
                     break;
                 }
             }
 
             //Check if the review is complete for this $reviewer in this $reviewer_position, if it is, continue
             $reviewer_event = REDCap::getEventIdFromUniqueEvent($reviewer_position.'_arm_1');
-            //Plugin::log($complete_review_records[$rec_id],"DEBUG", "REVIEWER FOR THIS RECORD");
             $review_complete = $complete_review_records[$rec_id][$reviewer_event]['review_marked_complete']['1'];
-            //Plugin::log($reviewer_event, "DEBUG", "Reviewer event for ".$reviewer);
-            //Plugin::log($review_complete, "DEBUG", "Reviewer complete ");
+
             if ($review_complete == '1') {
                 //$str.="COMPLETED \t";
                 continue;
             }
 
-            //Plugin::log($v[$event_id],"DEBUG", "$rec_id: SEND STATUS for $reviewer in $reviewer_position");
             $send_status = $v[$event_id]['send_'.$reviewer_position][1] ? 'Yes' : 'No';
             $send_status_5_wk = $v[$event_id]['send_'.$reviewer_position.'_5_wk_reminder'][1] ? 'Yes' : 'No';
             $send_status_2_wk = $v[$event_id]['send_'.$reviewer_position.'_2_wk_reminder'][1] ? 'Yes' : 'No';
@@ -233,11 +229,16 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
             'Reviewer Number', 'Budget Worksheet', 'MCHRI Proposal');
 
         foreach ($data as $key => $row) {
-            //Plugin::log($row, "DEBUG", "KEY: $key");
+
+            //CHANGE REQUEST: each row now allows reviewer to be in multiple review slots
+            $id = $row['record_id'];
+            $rev_num = $row['reviewer_num'];
+            $row_id = $id."_".$rev_num;
+
             foreach ($select as $k_item) {
-                //Plugin::log($k_item, "DEBUG", "=====K_ITME: $k_item has $row[$k_item]");
-                $id = $row['record_id'];
+
                 $item = $row[$k_item];
+
                 switch ($k_item) {
                     case "budget":
                         if ($item == null) {
@@ -246,16 +247,16 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                         }
                         //the returned valued from getData is the edocID!
                         $cell = $this->renderDownloadButton('budget_worksheet', $row['record_id'], $item, $sunet_id);
-                        $table_data[$id][$k_item] = array('CUSTOM' => 'plain', 'DISPLAY' => $cell);
+                        $table_data[$row_id][$k_item] = array('CUSTOM' => 'plain', 'DISPLAY' => $cell);
                         break;
                     case "proposal":
                         if ($item == null) {
-                            $table_data[$id][$k_item] = null;
+                            $table_data[$row_id][$k_item] = null;
                             break;
                         }
                         //the returned valued from getData is the edocID!
                         $cell = $this->renderDownloadButton('chri_proposal', $row['record_id'], $item, $sunet_id);
-                        $table_data[$id][$k_item] = array('CUSTOM' => 'plain', 'DISPLAY' => $cell);
+                        $table_data[$row_id][$k_item] = array('CUSTOM' => 'plain', 'DISPLAY' => $cell);
                         break;
 
                     case "record_id" :
@@ -272,12 +273,12 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                             '<input id="redirect_survey_' . $item . '" type="button" class="btn btn-primary" value="Go to ' . $item . '" onclick="redirectToSurvey(\'' . $survey_link . '\',\'' . $return_code . '\');" />';
 
 
-                        $table_data[$id][$k_item] = array('CUSTOM' => 'plain', 'DISPLAY' => $cell);
+                        $table_data[$row_id][$k_item] = array('CUSTOM' => 'plain', 'DISPLAY' => $cell);
                         break;
 
                     default:
 
-                        $table_data[$id][$k_item] = $item;
+                        $table_data[$row_id][$k_item] = $item;
                         break;
                 }
 
@@ -531,6 +532,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
         $first_event   = $this->getFirstEventId();
         $first_event_name = REDCap::getEventNames(true, false, $first_event);
 
+        $reviewer_fields = array();
 
         //first get list of record ids which have the suentID as a reviewer
         //create filter to get only rows where sunet is a reviewer
@@ -538,6 +540,9 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
         $i = count($reviewer_list);
         foreach ($reviewer_list as $r_field) {
             $rf = $r_field['reviewer-field'];
+            $reviewer_fields[] = $rf; //add to list of reviewer fields
+
+            //create filter to get all the reviewer records
             $filter .= "([{$first_event_name}][{$rf}] = '$target_sunet') ";
 
             if (next($reviewer_list)) {
@@ -545,7 +550,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                 $filter .= " OR ";
             }
         }
-        $rec_id = $this->framework->getRecordId();
+        $rec_id = $this->getRecordId(); //this doesn't work?
         $rec_id = 'record_id';
 
         $params = array(
@@ -558,7 +563,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
         //$this->emDebug("sunet search params are", $params);
         $reviewer_array = REDCap::getData($params);  // this is the array of records which have the sunet id as a reviewer
 
-        //need to split out the get intwo two gets because with a filter, it only seems to return the first event
+        //need to split out the get in two two gets because with a filter, it only seems to return the first event
         //we need the reviewer event to get the status
 
         $table_col = array("record_id","program","fy","cycle","applicant_name","dept","division",
@@ -580,9 +585,6 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
 
         $this->emDebug("found ". count($q) . " records for which $target_sunet is the reviewer.");
 
-
-        $results = json_decode($q,true);
-
         //i should replace this with a sql query where it retrieves only the records where the sunet is a reviewer in any of the reviewer slot
         //$result = REDCap::getData($pid, 'array', null, $table_col, null, null);
 
@@ -591,42 +593,46 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
 
             // the assignment of reviewer is in the first EVENT
             $value = $all[$first_event];
+            $first_event = $all[$this->getFirstEventId()];
 
             //create temp array of all the reviewers
 
             //get the event of the reviewer and check if the review is complete
             //this only works if $target_sunet does not show up for any of the other fields in $table_col
-            $found = array_search($target_sunet, $value);
+            //$found = array_search($target_sunet, $value);
 
-            //sanity check that $found starts with reviewer
-            if (strpos( $found,  "reviewer") !== 0) {
-                $this->emError("The reviewer sunet id was found in a non-reviewer field: $found");
-                break;
+            //CHANGE REQUEST from 2020Dec: allow reviewer to be in multiple events
+            //iterate over the reviewer fields
+            foreach ($reviewer_fields as $reviewer_field) {
+                $found             = $first_event[$reviewer_field];
+                if (!empty($found) AND ($found == $target_sunet)) {
+
+                    $reviewer_event    = $reviewer_field.'_arm_1';
+                    $reviewer_event_id = REDCap::getEventIdFromUniqueEvent($reviewer_event);
+
+                    //check completed field
+                    $complete_status   = $all[$reviewer_event_id]['review_marked_complete'][1];
+                    // if the review has been marked complete, don't add to table. 'review_marked_complete' is field checked by reviewer in chri_reviewer_form
+                    if ($complete_status == 1) {
+                        continue;
+                    }
+
+                    $array = array(
+                        "record_id"             =>$key,
+                        "review_marked_complete"=> $complete_status ,  //$value['review_marked_complete']['1'],
+                        "program"               =>$first_event['program'],
+                        "fy"                    =>$first_event['fy'],
+                        "cycle"                 =>$first_event['cycle'],
+                        "applicant_name"        =>$first_event['applicant_name'],
+                        "dept"                  =>$first_event['dept'],
+                        "division"              =>$first_event['division'],
+                        "reviewer_num"          =>  substr( $reviewer_field, 9, 1 ), //$reviewer_num,
+                        'budget'                =>$first_event['budget_worksheet'],
+                        'proposal'              =>$first_event['chri_proposal']);
+                    array_push($returnarray, $array);
+                }
             }
 
-            //$found will look like 'reviewer_1'.  Need to get the reviewer event id. infer it from the reviewer fieldname
-            $reviewer_event    = $found.'_arm_1';
-            $reviewer_event_id = REDCap::getEventIdFromUniqueEvent($reviewer_event);
-            $complete_status   = $all[$reviewer_event_id]['review_marked_complete'][1];
-
-            // if the review has been marked complete, don't add to table. 'review_marked_complete' is field checked by reviewer in chri_reviewer_form
-            if ($complete_status == 1) {
-                continue;
-            }
-
-            $array = array(
-                "record_id"             =>$key,
-                "review_marked_complete"=> $complete_status ,  //$value['review_marked_complete']['1'],
-                "program"               =>$value['program'],
-                "fy"                    =>$value['fy'],
-                "cycle"                 =>$value['cycle'],
-                "applicant_name"        =>$value['applicant_name'],
-                "dept"                  =>$value['dept'],
-                "division"              =>$value['division'],
-                "reviewer_num"          =>  substr( $found, 9, 1 ), //$reviewer_num,
-                'budget'                =>$value['budget_worksheet'],
-                'proposal'              =>$value['chri_proposal']);
-            array_push($returnarray, $array);
         }
         asort($returnarray);
         return $returnarray;
