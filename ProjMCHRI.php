@@ -242,7 +242,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                 switch ($k_item) {
                     case "budget":
                         if ($item == null) {
-                            $table_data[$id][$k_item] = null;
+                            $table_data[$row_id][$k_item] = null;
                             break;
                         }
                         //the returned valued from getData is the edocID!
@@ -568,7 +568,8 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
 
         $table_col = array("record_id","program","fy","cycle","applicant_name","dept","division",
             "reviewer_1","reviewer_2","reviewer_3","reviewer_4","reviewer_5","reviewer_6",
-            "budget_worksheet","chri_proposal","review_marked_complete");
+            "round_reviewer_1","round_reviewer_2","round_reviewer_3","round_reviewer_4","round_reviewer_5","round_reviewer_6",
+            "budget_worksheet","chri_proposal","resub_budget_upload","review_marked_complete");
 
 
         //Using the reviewer list, get the data from the reviewer events
@@ -617,6 +618,17 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                         continue;
                     }
 
+                    //change request to allow for resubmission
+                    $reviewer_num = substr( $reviewer_field, 9, 1 );
+                    $reviewer_round_field = 'round_' . $reviewer_field;  //hack
+                    $reviewer_round = $first_event[$reviewer_round_field];
+
+                    if ($reviewer_round == "2") {
+                        $budget_field = $first_event['resub_budget_upload'];
+                    } else {
+                        $budget_field = $first_event['budget_worksheet'];
+                    }
+
                     $array = array(
                         "record_id"             =>$key,
                         "review_marked_complete"=> $complete_status ,  //$value['review_marked_complete']['1'],
@@ -626,8 +638,8 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                         "applicant_name"        =>$first_event['applicant_name'],
                         "dept"                  =>$first_event['dept'],
                         "division"              =>$first_event['division'],
-                        "reviewer_num"          =>  substr( $reviewer_field, 9, 1 ), //$reviewer_num,
-                        'budget'                =>$first_event['budget_worksheet'],
+                        "reviewer_num"          => $reviewer_num,
+                        'budget'                => $budget_field, //$first_event['budget_worksheet'],
                         'proposal'              =>$first_event['chri_proposal']);
                     array_push($returnarray, $array);
                 }
