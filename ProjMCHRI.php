@@ -569,7 +569,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
         $table_col = array("record_id","program","fy","cycle","applicant_name","dept","division",
             "reviewer_1","reviewer_2","reviewer_3","reviewer_4","reviewer_5","reviewer_6",
             "round_reviewer_1","round_reviewer_2","round_reviewer_3","round_reviewer_4","round_reviewer_5","round_reviewer_6",
-            "budget_worksheet","chri_proposal","resub_budget_upload","review_marked_complete");
+            "budget_worksheet","chri_proposal","resub_application_upload","resub_budget_upload","review_marked_complete");
 
 
         //Using the reviewer list, get the data from the reviewer events
@@ -625,8 +625,10 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
 
                     if ($reviewer_round == "2") {
                         $budget_field = $first_event['resub_budget_upload'];
+                        $proposal_field = $first_event['resub_application_upload'];
                     } else {
                         $budget_field = $first_event['budget_worksheet'];
+                        $proposal_field = $first_event['chri_proposal'];
                     }
 
                     $array = array(
@@ -640,7 +642,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                         "division"              =>$first_event['division'],
                         "reviewer_num"          => $reviewer_num,
                         'budget'                => $budget_field, //$first_event['budget_worksheet'],
-                        'proposal'              =>$first_event['chri_proposal']);
+                        'proposal'              => $proposal_field); //$first_event['chri_proposal']);
                     array_push($returnarray, $array);
                 }
             }
