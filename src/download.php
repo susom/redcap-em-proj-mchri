@@ -11,30 +11,27 @@ namespace Stanford\ProjMCHRI;
 
 use REDCap;
 
-$pid =isset($_REQUEST['pid']) ? $_REQUEST['pid'] : "";
+$pid =isset($_REQUEST['projectId']) ? $_REQUEST['projectId'] : "";
 $sunet_id =isset($_REQUEST['sunet_id']) ? $_REQUEST['sunet_id'] : "";
 $field_name =isset($_REQUEST['field_name']) ? $_REQUEST['field_name'] : "";
 $record =isset($_REQUEST['record']) ? $_REQUEST['record'] : "";
-$event_id =isset($_REQUEST['event_id']) ? $_REQUEST['event_id'] : "";
-$edoc_id =isset($_REQUEST['edoc_id']) ? $_REQUEST['edoc_id'] : "";
+$edoc_id =isset($_REQUEST['eid']) ? $_REQUEST['eid'] : "";
 
 DEFINE ('NOAUTH',true);
 $_GET['pid'] = $pid;
 
 $module->emDebug("Reviewer portal: Started review filedown loaded by ".$sunet_id . " for project: $pid  record: $record for field $field_name and edoc : $edoc_id");
-REDCap::logEvent("Reviewer portal", "Review file downloaded by <$sunet_id> for field $field_name", null, $record, $event_id, $pid);
+REDCap::logEvent("Reviewer portal", "Review file downloaded by <$sunet_id> for field $field_name", null, $record, null, $pid);
 
 //Adapted code from DataEntry/file_download.php
 //Need to lookup the application_type and doc_name
 //Download file from the "edocs" web server directory
 
-downloadfile($edoc_id);
+downloadfile($edoc_id, $pid);
 
 
-function downloadfile($edoc_id) {
+function downloadfile($edoc_id, $pid) {
     global $module;
-
-    $pid = $module->getProjectId();
 
     $sql = "select * from redcap_edocs_metadata where doc_id = '" . $edoc_id . "' and delete_date is null";
     if (!empty($pid)) {

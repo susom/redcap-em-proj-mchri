@@ -770,8 +770,8 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
 
         //adapted file_download
         //$href ='download.php?id='.$edoc_id.'&pid='.PROJECT_PID.'&record='.$record.'&event_id='.EVENT_ID.'&field_name='.$fieldname.'&instance=1'.'&sunet_id='.$sunet_id;
-        $href =$download_url.'?id='.$edoc_id.'&pid='.$project_pid.'&record='.$record.'&event_id='.$event_id.
-            '&field_name='.$fieldname.'&instance=1'.'&sunet_id='.$sunet_id.'&edoc_id='.$edoc_id;
+        $href =$download_url.'?projectId='.$project_pid.'&record='.$record.
+            '&field_name='.$fieldname.'&sunet_id='.$sunet_id.'&eid='.$edoc_id;
 
         //$this->emDebug($href);
 
