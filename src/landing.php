@@ -8,7 +8,7 @@ use REDCap;
 
 
 $sunet_id = $_SERVER['WEBAUTH_USER'];
-//$sunet_id = 'test1';
+//$sunet_id = 'soda';
 
 $pid = $_GET['projectId'] ? $_GET['projectId']: $_GET['pid'];
 $_GET['pid']=$pid;
@@ -60,13 +60,6 @@ if (isset($_POST['download'])) {
 
 # loop through keeping those where sunet_fields contain $sunet_id
 $flex_data = $module->prepareRows($sunet_id,$pid);
-
-if ($flex_data == null) {
-    ?>
-    <div class="red" style="text-align: center"><b>Project ID is missing. Please notify your admin.</b> </div>
-    <?php
-    exit;
-}
 
 if (empty($flex_data)) {
     ?>

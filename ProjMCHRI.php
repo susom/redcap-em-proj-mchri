@@ -618,9 +618,9 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
         // global $event_1;
 
         $reviewer_list = $this->getSubSettings('reviewer-list');
-        $first_event_name   = $this->Proj->firstEventName;
-
-        //$first_event_name = REDCap::getEventNames(true, false, $first_event);
+        $first_event_label   = $this->Proj->firstEventName;
+        $first_event_name = lower($first_event_label) . "_arm_1";
+        //$first_event_name = REDCap::getEventNames(true, false, $first_event);  //not in project context
 
         $reviewer_fields = array();
 
