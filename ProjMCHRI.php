@@ -768,9 +768,13 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
         $project_pid = $this->getProjectId();
         $event_id = $this->getFirstEventId();
 
+        //remove the pid from teh download url
+        $patterns =
+        $no_pid_download_url = str_replace("pid=", "projectId=", $download_url);
+
         //adapted file_download
         //$href ='download.php?id='.$edoc_id.'&pid='.PROJECT_PID.'&record='.$record.'&event_id='.EVENT_ID.'&field_name='.$fieldname.'&instance=1'.'&sunet_id='.$sunet_id;
-        $href =$download_url.'?projectId='.$project_pid.'&record='.$record.
+        $href =$no_pid_download_url.'?projectId='.$project_pid.'&record='.$record.
             '&field_name='.$fieldname.'&sunet_id='.$sunet_id.'&eid='.$edoc_id;
 
         //$this->emDebug($href);
