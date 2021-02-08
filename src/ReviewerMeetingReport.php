@@ -65,6 +65,7 @@ $record_mentor = $record_result[$main_event_id]['record_mentor'];
 
 $mentor_table = $module->getMentorTable($record);
 
+//global $Proj;
 $md      = $Proj->metadata;
 $enums   = parseEnum($md['program']['element_enum']);
 $program = $enums[$program_code];

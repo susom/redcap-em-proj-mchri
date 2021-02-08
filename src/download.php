@@ -6,6 +6,11 @@
  * Time: 8:13 PM
  */
 
+namespace Stanford\ProjMCHRI;
+/** @var \Stanford\ProjMCHRI\ProjMCHRI $module */
+
+use REDCap;
+
 $pid =isset($_REQUEST['pid']) ? $_REQUEST['pid'] : "";
 $sunet_id =isset($_REQUEST['sunet_id']) ? $_REQUEST['sunet_id'] : "";
 $field_name =isset($_REQUEST['field_name']) ? $_REQUEST['field_name'] : "";

@@ -8,6 +8,7 @@ use REDCap;
 use ExternalModules\ExternalModules;
 use Alerts;
 use Files;
+use Project;
 
 require_once 'src/DataDictionaryHelper.php';
 require_once 'emLoggerTrait.php';
@@ -16,10 +17,26 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
 {
 
     use emLoggerTrait;
+    private $Proj;
 
     /*******************************************************************************************************************/
     /* HOOK METHODS  - migrated from hook for pid10466                                                                 */
     /***************************************************************************************************************** */
+
+
+    /**
+     * postpending the pid so that noauth won't validate as redcap project user
+     * substituting pid with projectId.
+     *
+     * @param $project_id
+     * @param $link
+     * @return void|null
+     */
+    //function redcap_module_link_check_display($project_id, $link) {
+//        $link["url"] .= '&projectId=' . $project_id;
+//        return $link;
+
+//    }
 
     public function redcap_survey_page_top($project_id, $record, $instrument, $event_id, $group_id, $survey_hash, $response_id, $repeat_instance = 1 ) {
 
@@ -127,14 +144,18 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
 
     /*******************************************************************************************************************/
     /* HELPER METHODS FOR HOOKS                                                                                        */
+    /* These methods are only called within project context                                                            */
     /***************************************************************************************************************** */
 
 
     /**
+     * This function is only called wihtin project context, so it does not need to have project_id passed
+     *
      * @param $reviewer
      * @param $event_id
      */
     function filterForReviewer($reviewer, $event_id, $current_id) {
+
         //Plugin::log($reviewer, "DEBUG","LOOKING FOR ");
         //get event name from the $event_id
         $event = REDCap::getEventNames(true, true,$event_id);
@@ -193,7 +214,12 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                 }
             }
 
+
+
             //Check if the review is complete for this $reviewer in this $reviewer_position, if it is, continue
+
+            //this method only called within project context so can call statuic method
+            //$reviewer_event = $this->Proj->getEventIdUsingUniqueEventName($reviewer_position.'_arm_1');
             $reviewer_event = REDCap::getEventIdFromUniqueEvent($reviewer_position.'_arm_1');
             $review_complete = $complete_review_records[$rec_id][$reviewer_event]['review_marked_complete']['1'];
 
@@ -217,11 +243,55 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
     }
 
 
+    /**
+     * return array of all the reviewer event ids
+     * @return array
+     */
+    function getReviewerEvents() {
+        $reviewer_events = array();
+
+        $reviewer_list = $this->getSubSettings('reviewer-list');
+
+        foreach ($reviewer_list as $k =>  $r_field) {
+            $rf = $r_field['reviewer-field'];
+            //$reviewer_events = $rf.'_arm_1';
+            $reviewer_events[] = REDCap::getEventIdFromUniqueEvent( $rf.'_arm_1');
+            //$reviewer_events[]  = $this->Proj->getEventIdUsingUniqueEventName($rf.'_arm_1');
+
+
+        }
+        return $reviewer_events;
+    }
+
+
+
     /*******************************************************************************************************************/
-    /* REVIEWER LANDING PAGE METHODS                                                                                                    */
+    /* REVIEWER LANDING PAGE METHODS                                                                                   */
+    /* These methods need to be project agnostic as it will be triggered by non-users                                  */
+    /* Solution was to pass in pid with a different parameter: projectId. That needs to be passed in through all       */
+    /* used methods. Link is only passed by Alerts.  Link in the REDCap project (EM links can only be used by project  */
+    /* users                                                                                                           */
     /***************************************************************************************************************** */
 
-    function generateReviewGrid($sunet_id, $data) {
+    /**
+     * @param $pid
+     * @param $sunet_id
+     * @param $data
+     * @return string
+     * @throws \Exception
+     */
+    function generateReviewGrid($pid, $sunet_id, $data) {
+        global $Proj;
+
+        if ($Proj->project_id == $pid) {
+            $this->Proj = $Proj;
+        } else {
+            if ($this->Proj->project_id != $pid) {
+                $this->Proj =  new Project($pid);
+            }
+        }
+
+        $_GET['pid'] = $pid;
 
         $select = array("record_id", "program", "fy", "cycle", "applicant_name", "dept", "division",
             "reviewer_num", "budget", "proposal");
@@ -262,11 +332,17 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                     case "record_id" :
                         $instrument = 'chri_reviewer_form';
                         $unique_event = 'reviewer_' . $row['reviewer_num'] . '_arm_1';
-                        $event_id = REDCap::getEventIdFromUniqueEvent($unique_event);
+
+
+                        //$event_id = REDCap::getEventIdFromUniqueEvent($unique_event);
+                        $event_id = $this->Proj->getEventIdUsingUniqueEventName($unique_event);
 
                         // Get the survey link for this record-instrument-event
-                        $survey_link = REDCap::getSurveyLink($row['record_id'], 'chri_reviewer_form', $event_id);
-                        $return_code = REDCap::getSurveyReturnCode($row['record_id'], 'chri_reviewer_form', $event_id);
+                        //$survey_link = REDCap::getSurveyLink($row['record_id'], 'chri_reviewer_form', $event_id);
+                        //$return_code = REDCap::getSurveyReturnCode($row['record_id'], 'chri_reviewer_form', $event_id);
+
+                        $survey_link = REDCap::getSurveyLink($row['record_id'], 'chri_reviewer_form', $event_id, null, $pid);
+                        $return_code = $this->getSurveyReturnCode($pid, $row['record_id'], 'chri_reviewer_form', $event_id);
 
                         //$cell = "<a href= ".$survey_link." target='_blank'>".$item."</a>";
                         $cell =
@@ -290,6 +366,22 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
 
     }
 
+
+    // Obtain survey return code for record-instrument[-event]
+
+    /**
+     * The REDCap static method does not work out of project context, so rewrite for local use.
+     *
+     * @param string $record
+     * @param string $instrument
+     * @param string $event_id
+     * @param int $instance
+     * @param false $overrideSaveAndReturn
+     */
+    public function getSurveyReturnCode($project_id, $record='', $instrument='', $event_id='', $instance=1, $overrideSaveAndReturn=false) {
+        $reset_codes =  $this->resetSurveyAndGetCodes($project_id, $record, $instrument, $event_id);
+        return $reset_codes['return_code'];
+    }
 
     /**
      * Basic table generator - html grid of fields and values in table
@@ -455,24 +547,6 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
         return $reviewer_fields;
     }
 
-    /**
-     * return array of all the reviewer event ids
-     * @return array
-     */
-    function getReviewerEvents() {
-        $reviewer_events = array();
-
-        $reviewer_list = $this->getSubSettings('reviewer-list');
-
-        foreach ($reviewer_list as $k =>  $r_field) {
-            $rf = $r_field['reviewer-field'];
-            //$reviewer_events = $rf.'_arm_1';
-            $reviewer_events[] = REDCap::getEventIdFromUniqueEvent( $rf.'_arm_1');
-
-        }
-        return $reviewer_events;
-    }
-
     function getMentorTable($record) {
         $main_event = $this->getFirstEventId();
         $max_mentors =5;
@@ -522,6 +596,21 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
      * @return array
      */
     function prepareRows($target_sunet, $pid) {
+        global $Proj;
+
+        if ($pid == null) {
+            return null;
+        }
+
+        if ($Proj->project_id == $pid) {
+            $this->Proj = $Proj;
+        } else {
+            if ($this->Proj == null) {
+                $this->Proj =  new Project($pid);
+            }
+        }
+
+
         $returnarray = array();
         // global $record;
         // global $log_id;
@@ -529,8 +618,9 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
         // global $event_1;
 
         $reviewer_list = $this->getSubSettings('reviewer-list');
-        $first_event   = $this->getFirstEventId();
-        $first_event_name = REDCap::getEventNames(true, false, $first_event);
+        $first_event_name   = $this->Proj->firstEventName;
+
+        //$first_event_name = REDCap::getEventNames(true, false, $first_event);
 
         $reviewer_fields = array();
 
@@ -554,7 +644,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
         $rec_id = 'record_id';
 
         $params = array(
-            'project_id'    => $this->getProjectId(),
+            'project_id'    => $pid,
             'return_format' => 'array',
             'fields'        => array($rec_id),
             'filterLogic'   => $filter
@@ -575,7 +665,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
         //Using the reviewer list, get the data from the reviewer events
 
         $event_params = array(
-            'project_id'    => $this->getProjectId(),
+            'project_id'    => $pid,
             'return_format' => 'array',
             'fields'        => $table_col,
             'records'       => array_keys($reviewer_array)
@@ -609,7 +699,10 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                 if (!empty($found) AND ($found == $target_sunet)) {
 
                     $reviewer_event    = $reviewer_field.'_arm_1';
-                    $reviewer_event_id = REDCap::getEventIdFromUniqueEvent($reviewer_event);
+                    //$reviewer_event_id = REDCap::getEventIdFromUniqueEvent($reviewer_event);
+                    $reviewer_event_id = $this->Proj->getEventIdUsingUniqueEventName($reviewer_event);
+
+
 
                     //check completed field
                     $complete_status   = $all[$reviewer_event_id]['review_marked_complete'][1];

@@ -8,17 +8,25 @@ use REDCap;
 
 
 $sunet_id = $_SERVER['WEBAUTH_USER'];
-//$sunet_id = 'soda';
+//$sunet_id = 'test1';
 
-$debug = $module->getProjectSetting('test');
+$pid = $_GET['projectId'] ? $_GET['projectId']: $_GET['pid'];
+$_GET['pid']=$pid;
+
+//$module->emDebug($module->getUrl('src/landing.php', true, true));
+
+
+$debug = $module->getProjectSetting('test', $pid);
+
 if ($debug) {
 
     if (SUPER_USER) {
-        $sunet_id = $module->getProjectSetting('test-user');
+        $sunet_id = $module->getProjectSetting('test-user', $pid);
         $module->emDebug("User " . $sunet_id . "  is a superuser and is mimicking $sunet_id.");
     }
 
 }
+
 
 $module->emDebug("Starting MCHRI landing page for project $pid for reviewer $sunet_id");
 
@@ -51,7 +59,14 @@ if (isset($_POST['download'])) {
 }
 
 # loop through keeping those where sunet_fields contain $sunet_id
-$flex_data = $module->prepareRows($sunet_id, $module->getProjectId());
+$flex_data = $module->prepareRows($sunet_id,$pid);
+
+if ($flex_data == null) {
+    ?>
+    <div class="red" style="text-align: center"><b>Project ID is missing. Please notify your admin.</b> </div>
+    <?php
+    exit;
+}
 
 if (empty($flex_data)) {
     ?>
@@ -63,7 +78,7 @@ if (empty($flex_data)) {
 
 
 //do a datatable version
-$review_grid = $module->generateReviewGrid($sunet_id, $flex_data);
+$review_grid = $module->generateReviewGrid($pid, $sunet_id, $flex_data);
 
 ?>
 
@@ -78,11 +93,11 @@ $review_grid = $module->generateReviewGrid($sunet_id, $flex_data);
 <!-- Bootstrap core CSS -->
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.10.20/datatables.min.css"/>
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-<link rel="stylesheet" type="text/css" href="<?php echo $module->getUrl("css/mchri.css") ?>" />
+<link rel="stylesheet" type="text/css" href="<?php echo $module->getUrl("css/mchri.css", true, true) ?>" />
 <script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.20/datatables.min.js"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.4.1/js/bootstrap-datepicker.min.js"></script>
-<script type='text/javascript' src='<?php echo $module->getUrl("js/mchri.js")?>'></script>
+<script type='text/javascript' src='<?php echo $module->getUrl("js/mchri.js", true, true)?>'></script>
 </head>
 <body>
 <header class="header-global">
@@ -130,7 +145,7 @@ $review_grid = $module->generateReviewGrid($sunet_id, $flex_data);
 </script>
 <style>
     .header-global nav a.som-logo{
-        background:url(<?php echo $module->getUrl("img/MCHRI_Logo_LeftAligned_TwoColor.png") ?>) 50% 50% no-repeat;
+        background:url(<?php echo $module->getUrl("img/MCHRI_Logo_LeftAligned_TwoColor.png", true, true) ?>) 50% 50% no-repeat;
         border-right: none;
         text-indent: -9999px;
         display: inline-block;
