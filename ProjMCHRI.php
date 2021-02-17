@@ -737,7 +737,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                             default:
                                 $budget_field = null;
                                 $proposal_field = null;
-                                break;*
+                                break;
                         }
                     } else {
                         $budget_field = $first_event['budget_worksheet'];
