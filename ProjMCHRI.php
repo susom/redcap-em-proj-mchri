@@ -659,7 +659,11 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
         $table_col = array("record_id","program","fy","cycle","applicant_name","dept","division",
             "reviewer_1","reviewer_2","reviewer_3","reviewer_4","reviewer_5","reviewer_6",
             "round_reviewer_1","round_reviewer_2","round_reviewer_3","round_reviewer_4","round_reviewer_5","round_reviewer_6",
-            "budget_worksheet","chri_proposal","resub_application_upload","resub_budget_upload","review_marked_complete");
+            "budget_worksheet","chri_proposal",  //original download
+            "resub_application_upload","resub_budget_upload",  //added for trainee
+            "budget_worksheet_v2","full_tip_proposal",   //added for other programs
+            "review_marked_complete");
+
 
 
         //Using the reviewer list, get the data from the reviewer events
@@ -715,10 +719,26 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                     $reviewer_num = substr( $reviewer_field, 9, 1 );
                     $reviewer_round_field = 'round_' . $reviewer_field;  //hack
                     $reviewer_round = $first_event[$reviewer_round_field];
+                    $program        = $first_event['program'];
 
+                    //new request: different download depending on which program they are enrolled in.
                     if ($reviewer_round == "2") {
-                        $budget_field = $first_event['resub_budget_upload'];
-                        $proposal_field = $first_event['resub_application_upload'];
+                        switch($program) {
+                            case 2:
+                                $budget_field = $first_event['resub_budget_upload'];
+                                $proposal_field = $first_event['resub_application_upload'];
+                                break;
+                            case 4:
+                            case 5:
+                            case 7:
+                                $budget_field = $first_event['budget_worksheet_v2'];
+                                $proposal_field = $first_event ['full_tip_proposal'];
+                                break;
+                            default:
+                                $budget_field = null;
+                                $proposal_field = null;
+                                break;*
+                        }
                     } else {
                         $budget_field = $first_event['budget_worksheet'];
                         $proposal_field = $first_event['chri_proposal'];

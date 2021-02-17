@@ -26,3 +26,18 @@ There are three EM links:
 ###3. Reviewer Meeting Report
 * Access limited to REDCAp project user. It needs to be called in the context of a record
 * Entry will be within project context.
+
+----------
+The reviewers will see different downloads depending on which submission round and program was selected:
+
+* Round 1
+  * budget_field   -- 'budget_worksheet'
+  * proposal_field -- 'chri_proposal'
+* Round 2
+  * Program is 2 (Clinical Trainee (MD) Support Program): 
+      * budget_field   -- 'resub_budget_upload'
+      * proposal_field -- 'resub_application_upload'
+  * Program is 4 (Faculty Scholars Program), 5 (Harman Scholar Program), or 7 (	Transdisciplinary Initiatives Program):
+    
+      * budget_field   -- 'budget_worksheet_v2'
+      * proposal_field -- 'full_tip_proposal'
