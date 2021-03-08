@@ -264,6 +264,27 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
     }
 
 
+    /**
+     * return array of all the reviewer event ids
+     * @return array
+     */
+    function getSubsettingFields($subsetting, $sub_fields) {
+        $reviewer_events = array();
+
+        $reviewer_list = $this->getSubSettings($subsetting);
+
+        foreach ($reviewer_list as $k =>  $r_field) {
+            $rf = $r_field[$sub_fields];
+            //$reviewer_events = $rf.'_arm_1';
+            $reviewer_events[] = REDCap::getEventIdFromUniqueEvent( $rf.'_arm_1');
+            //$reviewer_events[]  = $this->Proj->getEventIdUsingUniqueEventName($rf.'_arm_1');
+
+
+        }
+        return $reviewer_events;
+    }
+
+
 
     /*******************************************************************************************************************/
     /* REVIEWER LANDING PAGE METHODS                                                                                   */

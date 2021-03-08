@@ -35,33 +35,24 @@ if (!SUPER_USER) {
     }
 }
 
-//TODO: this is not needed?
-$meeting_list = $module->getSubSettings('report-field-list');
-$get_fields = array();
-foreach ($meeting_list as $k => $r_field) {
-    $get_fields[] = $r_field['report-field'];
-}
-
 //Getdata for the summarize field
 $get_fields = array('applicant_name', 'program', 'reviewer_summary', 'project_summary','mentor_summary_no_table',
-    'record_mentor', 'reviewer_name', 'impact');
+    'record_mentor', 'reviewer_name', 'impact', 'program_v2');
 
 $q = REDCap::getData('array',array($record), $get_fields);
 //$results = json_decode($q, true);
 
 $record_result = $q[$record];
-//$review_events = array(67556, 67557, 67558, 67559, 67560);
+
 $review_events = $module->getReviewerEvents();
 
-
 $main_event_id = $module->getFirstEventId();
-$main_event_name = REDCap::getEventNames(true, false, $main_event_id);
 
 $name = $record_result[$main_event_id]['applicant_name'];
 $program_code = $record_result[$main_event_id]['program'];
 $project_summary = $record_result[$main_event_id]['project_summary'];
 $mentor_summary = $record_result[$main_event_id]['mentor_summary_no_table'];
-$record_mentor = $record_result[$main_event_id]['record_mentor'];
+$round_2        = $record_result[$main_event_id]['program_v2'];
 
 $mentor_table = $module->getMentorTable($record);
 
@@ -74,12 +65,21 @@ $program = $enums[$program_code];
 
 $enums   = parseEnum($md['impact']['element_enum']);
 
+//change request 8Mar21: if in second round, only display reviewers 4-6 (remove 1-3)
 
 $i = 0;
+
+//Using program_v2 as proxy to signal that round 2 is triggered. in which case only display reviewers 4-6
+if (!empty($round_2)) {
+    $review_events = $module->getSubsettingFields('reviewer-r2-list', 'reviewer-r2-field');
+    $i=3;
+}
+
+
+
 $reviewer_reports = '';
 foreach ($review_events as $event_id) {
     $i++;
-    //    Plugin::log($event_id, "DEBUG", "event id at $i");
 
     $review = $record_result[$event_id]['reviewer_summary'];
     $reviewer = $record_result[$event_id]['reviewer_name'];
@@ -100,10 +100,6 @@ foreach ($review_events as $event_id) {
     $reviewer_reports .= "</div>";
 
 }
-
-
-//Plugin::log($record_result,"DEBUG",  "GET DATA "); exit;
-//print "<pre>" . print_r($record_result,  true) . "</pre>";
 
 // Get Variable Or Empty string Fom _REQUEST
 function voefr($var) {
