@@ -20,12 +20,8 @@ if (!$record) {
 
 //Getdata for the summarize field
 
-$get_fields = array('applicant_name', 'reviewer_summary');
-
-
-
+$get_fields = array('applicant_name', 'reviewer_summary', 'program_v2');
 $q = REDCap::getData('array',array($record), $get_fields);
-//$results = json_decode($q, true);
 
 $record_result = $q[$record];
 //$review_events = array(67556, 67557, 67558, 67559, 67560);
@@ -34,9 +30,20 @@ $review_events = $module->getReviewerEvents();
 $main_event_id = $module->getFirstEventId();
 $main_event_name = REDCap::getEventNames(true, false, $main_event_id);
 
-$name = $record_result[$main_event_id]['applicant_name'];
+$name    = $record_result[$main_event_id]['applicant_name'];
+$round_2 = $record_result[$main_event_id]['program_v2'];
 
 $i = 0;
+
+//change request 11Mar2021: if round 2 for program+v2 = Trainnee, suppress rounds  1-3
+//Using program_v2 as proxy to signal that round 2 is triggered. in which case only display reviewers 4-6
+//9mar2021: only suppress if round_2 is trainee (2)
+if ($round_2 == "2") {
+    $review_events = $module->getSubsettingFields('reviewer-r2-list', 'reviewer-r2-field');
+    $i=3;
+}
+
+
 $str = '';
 foreach ($review_events as $event_id) {
     $i++;
