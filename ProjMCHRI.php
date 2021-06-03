@@ -149,7 +149,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
 
 
     /**
-     * This function is only called wihtin project context, so it does not need to have project_id passed
+     * This function is only called within project context, so it does not need to have project_id passed
      *
      * @param $reviewer
      * @param $event_id
@@ -788,6 +788,277 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
 
     /**
      *
+     *
+     * @param $target_sunet
+     * @param $pid
+     * @return array
+     */
+    function prepareRowsLOI($target_sunet, $pid) {
+        global $Proj;
+
+        if ($pid == null) {
+            return null;
+        }
+
+        if ($Proj->project_id == $pid) {
+            $this->Proj = $Proj;
+        } else {
+            if ($this->Proj == null) {
+                $this->Proj =  new Project($pid);
+            }
+        }
+
+        $returnarray = array();
+
+
+        $reviewer_list = $this->getSubSettings('reviewer-list');
+        $reviewer_fields = array();
+        foreach ($reviewer_list as $r_field) {
+            $reviewer_fields[] = $r_field['reviewer-field']; //add to list of reviewer fields
+        }
+
+        //need to split out the get in two two gets because with a filter, it only seems to return the first event
+        //we need the reviewer event to get the status
+
+        $table_col = array("record_id","program","fy","cycle","applicant_name","dept","division",
+            "reviewer_1","reviewer_2","reviewer_3","reviewer_4","reviewer_5","reviewer_6",
+            "round_reviewer_1","round_reviewer_2","round_reviewer_3","round_reviewer_4","round_reviewer_5","round_reviewer_6",
+            "budget_worksheet","chri_proposal",  //original download
+            "resub_application_upload","resub_budget_upload",  //added for trainee
+            "budget_worksheet_v2","full_tip_proposal",   //added for other programs
+            "loi",                                       //added for loi update jun2021
+            "review_marked_complete");
+
+
+
+        //Using the reviewer list, get the data from the reviewer events
+        $this->emDebug("START SQL");
+        $reviewer_array_test = $this->findReviewerRecordsBySunet($pid, $target_sunet, $this->Proj->firstEventId);
+        $this->emDebug("END SQL / START GETDATA");
+        $reviewer_array = $this->findReviewerRecordsByGetData($pid, $target_sunet);
+        $this->emDebug("END GETDATA");
+
+        $this->emDebug("TESTING SQL ", $reviewer_array_test,$reviewer_array);//, array_keys($reviewer_array));
+        $event_params = array(
+            'project_id'    => $pid,
+            'return_format' => 'array',
+            'fields'        => $table_col,
+            'records'       => $reviewer_array
+        );
+        //$this->emDebug("record search params are", $event_params);
+        //filter limits to records where the sunet_id is a reviewer
+        $q = REDCap::getData($event_params);
+
+        $this->emDebug("found ". count($q) . " records for which $target_sunet is the reviewer.");
+
+        //i should replace this with a sql query where it retrieves only the records where the sunet is a reviewer in any of the reviewer slot
+        //$result = REDCap::getData($pid, 'array', null, $table_col, null, null);
+
+        //iterate over the each of the records
+        foreach ($q as $key => $all) {
+
+            // the assignment of reviewer is in the first EVENT
+            $value = $all[$first_event];
+            $first_event = $all[$this->getFirstEventId()];
+
+            //create temp array of all the reviewers
+
+            //get the event of the reviewer and check if the review is complete
+            //this only works if $target_sunet does not show up for any of the other fields in $table_col
+            //$found = array_search($target_sunet, $value);
+
+            //CHANGE REQUEST from 2020Dec: allow reviewer to be in multiple events
+            //iterate over the reviewer fields
+            foreach ($reviewer_fields as $reviewer_field) {
+                $found             = $first_event[$reviewer_field];
+                if (!empty($found) AND ($found == $target_sunet)) {
+
+                    $reviewer_event    = $reviewer_field.'_arm_1';
+                    //$reviewer_event_id = REDCap::getEventIdFromUniqueEvent($reviewer_event);
+                    $reviewer_event_id = $this->Proj->getEventIdUsingUniqueEventName($reviewer_event);
+
+                    //check completed field
+                    $complete_status   = $all[$reviewer_event_id]['review_marked_complete'][1];
+                    // if the review has been marked complete, don't add to table. 'review_marked_complete' is field checked by reviewer in chri_reviewer_form
+                    if ($complete_status == 1) {
+                        continue;
+                    }
+
+                    //change request to allow for resubmission
+                    $reviewer_num         = substr( $reviewer_field, 9, 1 );
+                    $reviewer_round_field = 'round_' . $reviewer_field;  //hack
+                    $reviewer_round       = $first_event[$reviewer_round_field];
+                    $program              = $first_event['program'];
+
+                    //change request: June 2021
+                    //if
+
+                    //new request: different download depending on which program they are enrolled in.
+                    if ($reviewer_round == "2") {
+                        switch($program) {
+                            case 2:
+                                $budget_field = $first_event['resub_budget_upload'];
+                                $proposal_field = $first_event['resub_application_upload'];
+                                break;
+                            case 4:
+                            case 5:
+                            case 7:
+                                $budget_field = $first_event['budget_worksheet_v2'];
+                                $proposal_field = $first_event ['full_tip_proposal'];
+                                break;
+                            default:
+                                $budget_field = null;
+                                $proposal_field = null;
+                                break;
+                        }
+                    } else if ($reviewer_round == "1") {
+                        //it's reviewer_round 1
+                        //if in tip, Faculty & Harman, 22q11 Neuropsych, Pediatric IBD use LOI
+                        switch ($program) {
+                            case 4:
+                            case 5:
+                            case 7:
+                            case 12:
+                            case 13:
+                                 $budget_field = null;
+                                 $proposal_field = $first_event['loi'];
+                                break;
+                            default:
+                                $budget_field = $first_event['budget_worksheet'];
+                                $proposal_field = $first_event['chri_proposal'];
+                               break;
+                        }
+
+                    } else {
+                        $budget_field = null;
+                        $proposal_field = null;
+                    }
+
+                    $array = array(
+                        "record_id"             =>$key,
+                        "review_marked_complete"=> $complete_status ,  //$value['review_marked_complete']['1'],
+                        "program"               =>$first_event['program'],
+                        "fy"                    =>$first_event['fy'],
+                        "cycle"                 =>$first_event['cycle'],
+                        "applicant_name"        =>$first_event['applicant_name'],
+                        "dept"                  =>$first_event['dept'],
+                        "division"              =>$first_event['division'],
+                        "reviewer_num"          => $reviewer_num,
+                        'budget'                => $budget_field, //$first_event['budget_worksheet'],
+                        'proposal'              => $proposal_field); //$first_event['chri_proposal']);
+                    array_push($returnarray, $array);
+                }
+            }
+
+        }
+        asort($returnarray);
+        return $returnarray;
+    }
+
+    function findReviewerRecordsByGetData($pid, $target_sunet) {
+
+        $reviewer_list = $this->getSubSettings('reviewer-list');
+        $first_event_label   = $this->Proj->firstEventName;
+        $first_event_name = lower($first_event_label) . "_arm_1";
+
+        $reviewer_fields = array();
+
+
+        //first get list of record ids which have the sunetID as a reviewer
+        //create filter to get only rows where sunet is a reviewer
+        $filter = "";
+        $i = count($reviewer_list);
+        foreach ($reviewer_list as $r_field) {
+            $rf = $r_field['reviewer-field'];
+            $reviewer_fields[] = $rf; //add to list of reviewer fields
+
+            //create filter to get all the reviewer records
+            $filter .= "([{$first_event_name}][{$rf}] = '$target_sunet') ";
+
+            if (next($reviewer_list)) {
+                //there is more so add an OR
+                $filter .= " OR ";
+            }
+        }
+        $rec_id = $this->getRecordId(); //this doesn't work?
+        $rec_id = 'record_id';
+
+        $params = array(
+            'project_id'    => $pid,
+            'return_format' => 'array',
+            'fields'        => array($rec_id),
+            'filterLogic'   => $filter
+        );
+
+        $reviewer_array = REDCap::getData($params);  // this is the array of record ids which have the sunet id as a reviewer
+
+
+        return array_keys($reviewer_array);
+    }
+
+    function findReviewerRecordsBySunet($pid, $sunetid, $event_id)
+    {
+        global $module;
+        global $Proj;
+
+        if ($pid == null) {
+            return null;
+        }
+
+
+        if (!isset($sunetid) || (empty($sunetid))) {
+            $module->emDebug("hash is $sunetid");
+            return null;
+
+        }
+
+
+        $reviewer_list = $this->getSubSettings('reviewer-list');
+        $list = array();
+        foreach($reviewer_list as $k=>$v) {
+
+            $list[] = "'".$v['reviewer-field']."'";
+        }
+        //$ids = sprintf("'%s'", implode("','", $list ) );
+        $reviewer_fieldnames = implode(",",$list);
+
+        try {
+            $sql = sprintf("
+            select distinct record
+               from redcap_data
+               where project_id = %d 
+                and event_id = %d
+                and value = '%s'
+                and field_name in (%s) 
+            order by record",
+                           $pid,
+                           $event_id,
+                           $sunetid,
+                           $reviewer_fieldnames
+            );
+
+            //$module->emDebug($sql);
+            $q = db_query($sql);
+
+
+            $q_records = array();
+             while ($row = db_fetch_array($q)) {
+                // $module->emDebug($row);
+                $q_records[]= $row['record'];
+            }
+            return $q_records;
+        }
+        catch (\Exception $e) {
+            $module->emDebug("Found Exception", $e->getMessage());
+            return null;
+        }
+
+    }
+
+
+
+    /**
+     *
      * @param unknown $fieldname
      * @param unknown $record
      * @param unknown $edoc_id
@@ -827,7 +1098,5 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
 
         return $cell;
     }
-
-
 
 }

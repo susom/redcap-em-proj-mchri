@@ -14,6 +14,10 @@ There are three EM links:
   *  Sent to the reviewer via alert. Link has 'projectId=<pid>' postpended
 
      http://redcap.stanford.edu/redcap_v10.6.3/ExternalModules/?prefix=proj_mchri&page=src%2Flanding&projectId=21085
+
+      * In the Alerts: On May 14, changed entry to:
+        * ExternalModules/?prefix=proj_mchri&page=src%2Flanding&projectId=[project-id]
+     * We needed to remove [redcap-version-url] from the start of the string as REDCap automatically adds it
     
   * First attempt to fix, we sent out api no auth links. These do not force webauth.
     
