@@ -106,6 +106,12 @@
 			"name": "<b>ADMIN USE ONLY: field for testing mode</b>",
 			"required": false,
 			"type": "text"
+		},
+		{
+			"key": "test-pid",
+			"name": "<b>ADMIN USE ONLY: project for testing mode</b>",
+			"required": false,
+			"type": "text"
 		}
 	],
 	"compatibility": {

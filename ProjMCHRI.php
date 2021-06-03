@@ -833,9 +833,9 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
 
         //Using the reviewer list, get the data from the reviewer events
         $this->emDebug("START SQL");
-        $reviewer_array_test = $this->findReviewerRecordsBySunet($pid, $target_sunet, $this->Proj->firstEventId);
+        $reviewer_array = $this->findReviewerRecordsBySQL($pid, $target_sunet, $this->Proj->firstEventId);
         $this->emDebug("END SQL / START GETDATA");
-        $reviewer_array = $this->findReviewerRecordsByGetData($pid, $target_sunet);
+        $reviewer_array_test = $this->findReviewerRecordsByGetData($pid, $target_sunet);
         $this->emDebug("END GETDATA");
 
         $this->emDebug("TESTING SQL ", $reviewer_array_test,$reviewer_array);//, array_keys($reviewer_array));
@@ -996,7 +996,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
         return array_keys($reviewer_array);
     }
 
-    function findReviewerRecordsBySunet($pid, $sunetid, $event_id)
+    function findReviewerRecordsBySQL($pid, $sunetid, $event_id)
     {
         global $module;
         global $Proj;
