@@ -22,7 +22,7 @@ if (!$record) {
 
 $get_fields = array('applicant_name', 'reviewer_summary', 'program_v2');
 $q = REDCap::getData('array',array($record), $get_fields);
-$module->emDebug($q);
+//$module->emDebug($q);
 
 $record_result = $q[$record];
 //$review_events = array(67556, 67557, 67558, 67559, 67560);
@@ -36,10 +36,11 @@ $round_2 = $record_result[$main_event_id]['program_v2'];
 
 $i = 0;
 
+//change request July2021: if round 2 is set (not empty), then suppress 1-3
 //change request 11Mar2021: if round 2 for program+v2 = Trainnee, suppress rounds  1-3
 //Using program_v2 as proxy to signal that round 2 is triggered. in which case only display reviewers 4-6
 //9mar2021: only suppress if round_2 is trainee (2)
-if ($round_2 == "2") {
+if (!empty($round_2)) {
     $review_events = $module->getSubsettingFields('reviewer-r2-list', 'reviewer-r2-field');
     $i=3;
 }
@@ -48,7 +49,7 @@ if ($round_2 == "2") {
 $str = '';
 foreach ($review_events as $event_id) {
     $i++;
-    $module->emDebug("$event_id event id at $i");
+    //$module->emDebug("$event_id event id at $i");
 
     $review = $record_result[$event_id]['reviewer_summary'];
     //143 seems to be the char length of an empty summarize field
