@@ -787,7 +787,8 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
     }
 
     /**
-     *
+     * This is the testing version (for the round 2 update)
+     * After test pass, we should rename to prepareRows
      *
      * @param $target_sunet
      * @param $pid
@@ -825,7 +826,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
             "round_reviewer_1","round_reviewer_2","round_reviewer_3","round_reviewer_4","round_reviewer_5","round_reviewer_6",
             "budget_worksheet","chri_proposal",  //original download
             "resub_application_upload","resub_budget_upload",  //added for trainee
-            "budget_worksheet_v2","full_tip_proposal",   //added for other programs
+            "budget_worksheet_v2","full_proposal_v2",     //added for other programs
             "loi",                                       //added for loi update jun2021
             "review_marked_complete");
 
@@ -903,8 +904,10 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                             case 4:
                             case 5:
                             case 7:
+                            case 12:
+                            case 13:
                                 $budget_field = $first_event['budget_worksheet_v2'];
-                                $proposal_field = $first_event ['full_tip_proposal'];
+                                $proposal_field = $first_event ['full_proposal_v2'];
                                 break;
                             default:
                                 $budget_field = null;

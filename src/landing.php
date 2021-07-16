@@ -136,8 +136,16 @@ $review_grid = $module->generateReviewGrid($pid, $sunet_id, $flex_data);
     };
 
     $(document).ready(function() {
+        /** dom control elements
+         * l - length changing input control
+         f - filtering input
+         t - The table!
+         i - Table information summary
+         p - pagination control
+         r - processing display element
+         */
         $('#review_table').DataTable( {
-            "dom": '<f<t>i>'
+            "dom": 'fltip'
         } );
 
 
