@@ -59,15 +59,8 @@ if (isset($_POST['download'])) {
 }
 
 # loop through keeping those where sunet_fields contain $sunet_id
-//in order not to disrupt the other version, make changes to new loi method
-$test_pid = $module->getProjectSetting('test-pid', $pid);
+$flex_data = $module->prepareRows($sunet_id,$pid);
 
-if ( in_array($pid,array($test_pid))) {
-    $module->emDebug("We are in a test pid $test_pid. Use test method.");
-    $flex_data = $module->prepareRowsLOI($sunet_id,$pid);
-} else {
-    $flex_data = $module->prepareRows($sunet_id,$pid);
-}
 
 if (empty($flex_data)) {
     ?>

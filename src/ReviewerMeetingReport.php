@@ -72,21 +72,10 @@ $i = 0;
 //change request July2021: if round 2 is set (not empty), then suppress 1-3
 //Using program_v2 as proxy to signal that round 2 is triggered. in which case only display reviewers 4-6
 //9mar2021: only suppress if round_2 is trainee (2)
-$test_pid = $module->getProjectSetting('test-pid');
-
-if ( in_array($module->getProjectId(), array($test_pid))) {
-
-    if (!empty($round_2)) {
-        $review_events = $module->getSubsettingFields('reviewer-r2-list', 'reviewer-r2-field');
-        $i = 3;
-    }
-} else {
-    if ($round_2 == "2") {
-        $review_events = $module->getSubsettingFields('reviewer-r2-list', 'reviewer-r2-field');
-        $i=3;
-    }
+if (!empty($round_2)) {
+    $review_events = $module->getSubsettingFields('reviewer-r2-list', 'reviewer-r2-field');
+    $i = 3;
 }
-
 
 $reviewer_reports = '';
 foreach ($review_events as $event_id) {
