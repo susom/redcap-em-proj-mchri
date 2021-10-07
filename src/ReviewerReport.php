@@ -26,15 +26,12 @@ $q = REDCap::getData('array',array($record), $get_fields);
 
 $record_result = $q[$record];
 //$review_events = array(67556, 67557, 67558, 67559, 67560);
-$review_events = $module->getReviewerEvents();
 
 $main_event_id = $module->getFirstEventId();
 $main_event_name = REDCap::getEventNames(true, false, $main_event_id);
 
 $name    = $record_result[$main_event_id]['applicant_name'];
 $round_2 = $record_result[$main_event_id]['program_v2'];
-
-$i = 0;
 
 //change request July2021: if round 2 is set (not empty), then suppress 1-3
 //change request 11Mar2021: if round 2 for program+v2 = Trainnee, suppress rounds  1-3
@@ -44,6 +41,9 @@ $i = 0;
 if (!empty($round_2)) {
     $review_events = $module->getSubsettingFields('reviewer-r2-list', 'reviewer-r2-field');
     $i = 3;
+} else {
+    $review_events = $module->getSubsettingFields('reviewer-r1-list', 'reviewer-r1-field');
+    $i = 0;
 }
 
 

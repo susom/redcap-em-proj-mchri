@@ -44,8 +44,6 @@ $q = REDCap::getData('array',array($record), $get_fields);
 
 $record_result = $q[$record];
 
-$review_events = $module->getReviewerEvents();
-
 $main_event_id = $module->getFirstEventId();
 
 $name = $record_result[$main_event_id]['applicant_name'];
@@ -67,14 +65,15 @@ $enums   = parseEnum($md['impact']['element_enum']);
 
 //change request 8Mar21: if in second round, only display reviewers 4-6 (remove 1-3)
 
-$i = 0;
-
 //change request July2021: if round 2 is set (not empty), then suppress 1-3
 //Using program_v2 as proxy to signal that round 2 is triggered. in which case only display reviewers 4-6
 //9mar2021: only suppress if round_2 is trainee (2)
 if (!empty($round_2)) {
     $review_events = $module->getSubsettingFields('reviewer-r2-list', 'reviewer-r2-field');
     $i = 3;
+}  else {
+    $review_events = $module->getSubsettingFields('reviewer-r1-list', 'reviewer-r1-field');
+    $i = 0;
 }
 
 $reviewer_reports = '';
