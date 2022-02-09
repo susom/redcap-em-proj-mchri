@@ -87,6 +87,7 @@ function voefr($var) {
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
     <link
         href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css'
         rel='stylesheet' media='screen,print'>
@@ -107,6 +108,12 @@ function voefr($var) {
 <?php echo $str;?>
 </body>
 
+<script type="text/javascript">
+    $(document).ready(function () {
+        /** suppress the scores for ReviewerReport */
+        $('tbody > tr > td:contains("LOI Ranking")').parent().remove();
+    });
+</script>
 <style>
     img {
         background:url(<?php echo $module->getUrl("img/MCHRI_Logo_LeftAligned_TwoColor.png") ?>) 50% 50% no-repeat;
