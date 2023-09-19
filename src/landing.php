@@ -7,12 +7,13 @@ use REDCap;
 
 
 
-//$sunet_id = $_SERVER['WEBAUTH_USER'];
+$sunet_id = $_SERVER['WEBAUTH_USER'];
+$module->emDebug("WEBAUTH is ".$sunet_id);
 //use framework method
-$sunet_id = $module->getUser()->getUsername();
+$sunet_id_user = $module->getUser()->getUsername();
 //$sunet_id = 'soda';
 
-$module->emDebug("user is ".$sunet_id);
+$module->emDebug("user is ".$sunet_id_user);
 
 $pid = $_GET['projectId'] ? $_GET['projectId']: $_GET['pid'];
 $_GET['pid']=$pid;
