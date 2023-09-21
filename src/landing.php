@@ -7,13 +7,12 @@ use REDCap;
 
 
 
-$sunet_id = $_SERVER['WEBAUTH_USER'];
-$module->emDebug("WEBAUTH is ".$sunet_id);
+$sunet_id_wb = $_SERVER['REMOTE_USER'];
 //use framework method
-$sunet_id_user = $module->getUser()->getUsername();
+$sunet_id = $module->getUser()->getUsername();
 //$sunet_id = 'soda';
 
-$module->emDebug("user is ".$sunet_id_user);
+
 
 $pid = $_GET['projectId'] ? $_GET['projectId']: $_GET['pid'];
 $_GET['pid']=$pid;
@@ -34,6 +33,7 @@ if ($debug) {
 
 
 $module->emDebug("Starting MCHRI landing page for project $pid for reviewer $sunet_id");
+$module->emDebug("WEBAUTH_USER / REMOTE_USER user is ".$sunet_id_wb);
 
 //if sunet ID not set leave
 if (!isset($sunet_id) && !$debug) {
