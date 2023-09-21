@@ -676,7 +676,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
         foreach ($q as $key => $all) {
 
             // the assignment of reviewer is in the first EVENT
-            $value = $all[$first_event];
+            //$value = $all[$first_event];
             $first_event = $all[$this->getFirstEventId()];
 
             //create temp array of all the reviewers
