@@ -750,8 +750,10 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                         }
 
                     } else {
-                        $budget_field = null;
-                        $proposal_field = null;
+                        //$budget_field = null;
+                        //$proposal_field = null;
+                        $budget_field = $first_event['budget_worksheet'];
+                        $proposal_field = $first_event['chri_proposal'];
                     }
 
                     $array = array(
@@ -857,7 +859,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                            $reviewer_fieldnames
             );
 
-            //$module->emDebug($sql);
+            $module->emDebug($sql);
             $q = db_query($sql);
 
 
@@ -894,6 +896,20 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
         $href = APP_PATH_WEBROOT . 'DataEntry/file_download.php?pid='.PROJECT_PID.'&doc_id_hash='.$doc_id_hash.'&id='.$edoc_id.
             '&s=&page=application&record='.$record.'&event_id='.EVENT_ID.'.&field_name='.$fieldname.'&instance=1';
         */
+
+        /**
+         UPDATE FOR GOOGLECLOUD
+         *
+        $googleClient = Files::googleCloudStorageClient();
+        $bucket = $googleClient->bucket($GLOBALS['redcap-edocs-dev']);
+        $googleClient->registerStreamWrapper();
+
+
+        $data = file_get_contents('gs://'.$GLOBALS['redcap-edocs-dev'].'/' . $this_file['stored_name']);
+        $data = file_get_contents('gs://'.$GLOBALS['redcap-edocs-dev'].'/' . '21085/20201130113010_pid21085_zyaQHi.xlsx';
+
+         ERROR The file “/edocs/21085/20201130113010_pid21085_zyaQHi.xlsx” (“test budget.xlsx”) d
+         */
 
         //update for EM
         $download_url = $this->getUrl("src/download.php", true, true);
