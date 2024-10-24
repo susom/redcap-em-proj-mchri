@@ -708,10 +708,31 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                     $reviewer_round       = $first_event[$reviewer_round_field];
                     $program              = $first_event['program'];
 
-                    //change request: June 2021
-                    //if
-
-                    //new request: different download depending on which program they are enrolled in.
+                    //change Request: Oct 2024 - addition to program. Current program list
+                    /**
+                     * 8, Bridge Support
+                     * 1, Clinician Educator Support Program
+                     * 2, Clinical Trainee (MD) Support Program
+                     * 19, T-32 Pediatric Subspecialty Global Health Fellowship
+                     * 4, Faculty Scholars Program
+                     * 5, Harman Scholar Program
+                     * 11, Instructor K-awards Support
+                     * 6, Master's Tuition Program
+                     * 9, Pilot Grants
+                     * 20, CERPHE
+                     * 21, CERPHE TRAINEE Grant
+                     * 15, Structural Racism, Social Injustice & Health Disparities Pilot Grants
+                     * 10, Postdoctoral Support
+                     * 7, Transdisciplinary Initiatives Program
+                     * 22, CYSHCN - Transdisciplinary Initiatives Program (TIP)
+                     * 12, Pediatric IBD and Celiac Disease Research Seed Grants
+                     * 13, 22q11 Neuropsychiatry Research Program
+                     * 14, Pediatric IBD and Celiac Disease Research Postdoc Grants
+                     * 16, Pediatric IBD and Celiac Disease Research Early Career Support Grants
+                     * 17, K12 Diabetes - Docs
+                     * 18, ICP (Interprofessional Clinicians Program)
+                     */
+                    //change request: June 2021: different download depending on which program they are enrolled in.
                     if ($reviewer_round == "2") {
                         switch($program) {
                             case 2:
@@ -723,6 +744,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                             case 7:
                             case 12:
                             case 13:
+                            case 22:
                                 $budget_field = $first_event['budget_worksheet_v2'];
                                 $proposal_field = $first_event ['full_proposal_v2'];
                                 break;
@@ -740,6 +762,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                             case 7:
                             case 12:
                             case 13:
+                            case 22:
                                  $budget_field = null;
                                  $proposal_field = $first_event['loi'];
                                 break;
