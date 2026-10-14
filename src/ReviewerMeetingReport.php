@@ -68,7 +68,8 @@ $enums   = parseEnum($md['impact']['element_enum']);
 //change request July2021: if round 2 is set (not empty), then suppress 1-3
 //Using program_v2 as proxy to signal that round 2 is triggered. in which case only display reviewers 4-6
 //9mar2021: only suppress if round_2 is trainee (2)
-if (!empty($round_2)) {
+//Oct2026: round 2 trigger field is configurable (default program_v2) and can be disabled per project
+if ($module->isRound2($record, $main_event_id)) {
     $review_events = $module->getSubsettingFields('reviewer-r2-list', 'reviewer-r2-field');
     $i = 3;
 }  else {

@@ -265,6 +265,26 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
 
 
     /**
+     * Should the reviewer reports show Round 2 reviewers for this record?
+     * Round 2 if the trigger field (default program_v2) is not empty in the first event,
+     * unless Round 2 is disabled for the project.
+     * @param $record
+     * @param $main_event_id
+     * @return bool
+     */
+    function isRound2($record, $main_event_id) {
+        if ($this->getProjectSetting('disable-round-2')) {
+            return false;
+        }
+        $trigger_field = $this->getProjectSetting('round-2-trigger-field');
+        if (empty($trigger_field)) {
+            $trigger_field = 'program_v2';
+        }
+        $q = REDCap::getData('array', array($record), array($trigger_field), $main_event_id);
+        return !empty($q[$record][$main_event_id][$trigger_field]);
+    }
+
+    /**
      * return array of all the reviewer event ids
      * @return array
      */

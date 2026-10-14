@@ -111,6 +111,18 @@
 			]
 		},
 		{
+			"key": "round-2-trigger-field",
+			"name": "<b>Round 2 Trigger Field</b><br>If this field (first event) is not empty, the Reviewer Reports show Round 2 reviewers instead of Round 1.<br>Leave blank to use <i>program_v2</i>",
+			"required": false,
+			"type": "field-list"
+		},
+		{
+			"key": "disable-round-2",
+			"name": "<b>Disable Round 2</b><br>Reviewer Reports always show Round 1 reviewers",
+			"required": false,
+			"type": "checkbox"
+		},
+		{
 			"key": "test",
 			"name": "<b>TESTING : check if in testing mode</b>",
 			"required": false,
