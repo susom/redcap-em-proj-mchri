@@ -266,22 +266,66 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
 
     /**
      * Should the reviewer reports show Round 2 reviewers for this record?
-     * Round 2 if the trigger field (default program_v2) is not empty in the first event,
-     * unless Round 2 is disabled for the project.
+     * - If round-2-trigger-field is set: Round 2 when that field is not empty in the first event
+     * - Legacy MCHRI projects (have a 'round_2' form): Round 2 when program_v2 is not empty
+     * - Otherwise: Round 2 once any Round 2 reviewer slot (reviewer-r2-list) is assigned
      * @param $record
      * @param $main_event_id
      * @return bool
      */
     function isRound2($record, $main_event_id) {
-        if ($this->getProjectSetting('disable-round-2')) {
+        $trigger_fields = array();
+        $trigger_field = $this->getProjectSetting('round-2-trigger-field');
+        if (!empty($trigger_field)) {
+            $trigger_fields[] = $trigger_field;
+        } else if (isset($this->getProj()->forms['round_2'])) {
+            $trigger_fields[] = 'program_v2';
+        } else {
+            foreach ($this->getSubSettings('reviewer-r2-list') as $r_field) {
+                if (!empty($r_field['reviewer-r2-field'])) {
+                    $trigger_fields[] = $r_field['reviewer-r2-field'];
+                }
+            }
+        }
+        if (empty($trigger_fields)) {
             return false;
         }
-        $trigger_field = $this->getProjectSetting('round-2-trigger-field');
-        if (empty($trigger_field)) {
-            $trigger_field = 'program_v2';
+
+        $q = REDCap::getData('array', array($record), $trigger_fields, $main_event_id);
+        foreach ($trigger_fields as $field) {
+            if (!empty($q[$record][$main_event_id][$field])) {
+                return true;
+            }
         }
-        $q = REDCap::getData('array', array($record), array($trigger_field), $main_event_id);
-        return !empty($q[$record][$main_event_id][$trigger_field]);
+        return false;
+    }
+
+    /**
+     * The project being worked on: set by the landing page methods (no-auth, projectId param), else project context
+     * @return Project
+     */
+    function getProj() {
+        global $Proj;
+        return !empty($this->Proj) ? $this->Proj : $Proj;
+    }
+
+    /**
+     * Reviewer survey instrument: the form holding review_marked_complete
+     * (chri_reviewer_form in MCHRI, khi_reviewer_form in KHI)
+     * @return string
+     */
+    function getReviewerForm() {
+        $form = $this->getProj()->metadata['review_marked_complete']['form_name'] ?? null;
+        return !empty($form) ? $form : 'chri_reviewer_form';
+    }
+
+    /**
+     * Round 1 proposal upload field: <reviewer form prefix>_proposal (chri_proposal, khi_proposal)
+     * @return string
+     */
+    function getProposalField() {
+        $field = preg_replace('/_reviewer_form$/', '', $this->getReviewerForm()) . '_proposal';
+        return isset($this->getProj()->metadata[$field]) ? $field : 'chri_proposal';
     }
 
     /**
@@ -366,12 +410,12 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                             break;
                         }
                         //the returned valued from getData is the edocID!
-                        $cell = $this->renderDownloadButton('chri_proposal', $row['record_id'], $item, $sunet_id);
+                        $cell = $this->renderDownloadButton($this->getProposalField(), $row['record_id'], $item, $sunet_id);
                         $table_data[$row_id][$k_item] = array('CUSTOM' => 'plain', 'DISPLAY' => $cell);
                         break;
 
                     case "record_id" :
-                        $instrument = 'chri_reviewer_form';
+                        $instrument = $this->getReviewerForm();
                         $unique_event = 'reviewer_' . $row['reviewer_num'] . '_arm_1';
 
 
@@ -382,8 +426,8 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                         //$survey_link = REDCap::getSurveyLink($row['record_id'], 'chri_reviewer_form', $event_id);
                         //$return_code = REDCap::getSurveyReturnCode($row['record_id'], 'chri_reviewer_form', $event_id);
 
-                        $survey_link = REDCap::getSurveyLink($row['record_id'], 'chri_reviewer_form', $event_id, null, $pid);
-                        $return_code = $this->getSurveyReturnCode($pid, $row['record_id'], 'chri_reviewer_form', $event_id);
+                        $survey_link = REDCap::getSurveyLink($row['record_id'], $instrument, $event_id, null, $pid);
+                        $return_code = $this->getSurveyReturnCode($pid, $row['record_id'], $instrument, $event_id);
 
                         //$cell = "<a href= ".$survey_link." target='_blank'>".$item."</a>";
                         $cell =
@@ -666,7 +710,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
         $table_col = array("record_id","program","fy","cycle","applicant_name","dept","division",
             "reviewer_1","reviewer_2","reviewer_3","reviewer_4","reviewer_5","reviewer_6",
             "round_reviewer_1","round_reviewer_2","round_reviewer_3","round_reviewer_4","round_reviewer_5","round_reviewer_6",
-            "budget_worksheet","chri_proposal",  //original download
+            "budget_worksheet",$this->getProposalField(),  //original download (chri_proposal / khi_proposal)
             "resub_application_upload","resub_budget_upload",  //added for trainee
             "budget_worksheet_v2","full_proposal_v2",     //added for other programs
             "loi",                                       //added for loi update jun2021
@@ -788,7 +832,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                                 break;
                             default:
                                 $budget_field = $first_event['budget_worksheet'];
-                                $proposal_field = $first_event['chri_proposal'];
+                                $proposal_field = $first_event[$this->getProposalField()];
                                break;
                         }
 
@@ -796,7 +840,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                         //$budget_field = null;
                         //$proposal_field = null;
                         $budget_field = $first_event['budget_worksheet'];
-                        $proposal_field = $first_event['chri_proposal'];
+                        $proposal_field = $first_event[$this->getProposalField()];
                     }
 
                     $array = array(

@@ -112,15 +112,9 @@
 		},
 		{
 			"key": "round-2-trigger-field",
-			"name": "<b>Round 2 Trigger Field</b><br>If this field (first event) is not empty, the Reviewer Reports show Round 2 reviewers instead of Round 1.<br>Leave blank to use <i>program_v2</i>",
+			"name": "<b>OPTIONAL: Round 2 Trigger Field</b><br>If this field (first event) is not empty, the Reviewer Reports show Round 2 reviewers instead of Round 1.<br>Leave blank for the default: <i>program_v2</i> if the project has a round_2 form, otherwise any Round 2 reviewer assigned",
 			"required": false,
 			"type": "field-list"
-		},
-		{
-			"key": "disable-round-2",
-			"name": "<b>Disable Round 2</b><br>Reviewer Reports always show Round 1 reviewers",
-			"required": false,
-			"type": "checkbox"
 		},
 		{
 			"key": "test",
