@@ -329,6 +329,15 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
     }
 
     /**
+     * Legacy MCHRI project (has the 'round_2' form): keeps the original landing page columns.
+     * Cloned projects (KHI) get a "<PREFIX> Proposal" column from <prefix>_proposal plus an LOI column.
+     * @return bool
+     */
+    function isLegacyMchri() {
+        return isset($this->getProj()->forms['round_2']);
+    }
+
+    /**
      * return array of all the reviewer event ids
      * @return array
      */
@@ -382,6 +391,13 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
             "reviewer_num", "budget", "proposal");
         $header = array('Reviewer Form', 'Program', 'FY', 'Cycle', 'Full Name', 'Department', 'Division',
             'Reviewer Number', 'Budget Worksheet', 'MCHRI Proposal');
+        if (!$this->isLegacyMchri()) {
+            $header[count($header) - 1] = strtoupper(preg_replace('/_proposal$/', '', $this->getProposalField())) . ' Proposal';
+            if (isset($this->getProj()->metadata['loi'])) {
+                $select[] = 'loi';
+                $header[] = 'LOI';
+            }
+        }
 
         foreach ($data as $key => $row) {
 
@@ -411,6 +427,14 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                         }
                         //the returned valued from getData is the edocID!
                         $cell = $this->renderDownloadButton($this->getProposalField(), $row['record_id'], $item, $sunet_id);
+                        $table_data[$row_id][$k_item] = array('CUSTOM' => 'plain', 'DISPLAY' => $cell);
+                        break;
+                    case "loi":
+                        if ($item == null) {
+                            $table_data[$row_id][$k_item] = null;
+                            break;
+                        }
+                        $cell = $this->renderDownloadButton('loi', $row['record_id'], $item, $sunet_id);
                         $table_data[$row_id][$k_item] = array('CUSTOM' => 'plain', 'DISPLAY' => $cell);
                         break;
 
@@ -843,6 +867,11 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                         $proposal_field = $first_event[$this->getProposalField()];
                     }
 
+                    //cloned projects (KHI): proposal column is always <prefix>_proposal; LOI has its own column
+                    if (!$this->isLegacyMchri()) {
+                        $proposal_field = $first_event[$this->getProposalField()];
+                    }
+
                     $array = array(
                         "record_id"             =>$key,
                         "review_marked_complete"=> $complete_status ,  //$value['review_marked_complete']['1'],
@@ -854,7 +883,8 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                         "division"              =>$first_event['division'],
                         "reviewer_num"          => $reviewer_num,
                         'budget'                => $budget_field, //$first_event['budget_worksheet'],
-                        'proposal'              => $proposal_field); //$first_event['chri_proposal']);
+                        'proposal'              => $proposal_field, //$first_event['chri_proposal']);
+                        'loi'                   => $first_event['loi'] ?? null);
                     array_push($returnarray, $array);
                 }
             }
