@@ -867,8 +867,9 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                         $proposal_field = $first_event[$this->getProposalField()];
                     }
 
-                    //cloned projects (KHI): proposal column is always <prefix>_proposal; LOI has its own column
-                    if (!$this->isLegacyMchri()) {
+                    //cloned projects (KHI), outside Round 2: <prefix>_proposal + budget_worksheet; LOI has its own column
+                    if ($reviewer_round != "2" && !$this->isLegacyMchri()) {
+                        $budget_field = $first_event['budget_worksheet'];
                         $proposal_field = $first_event[$this->getProposalField()];
                     }
 
