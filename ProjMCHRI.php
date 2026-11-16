@@ -329,12 +329,12 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
     }
 
     /**
-     * Legacy MCHRI project (has the 'round_2' form): keeps the original landing page columns.
-     * Cloned projects (KHI) get a "<PREFIX> Proposal" column from <prefix>_proposal plus an LOI column.
+     * Legacy MCHRI project (has the 'round_2' form and a chri_proposal field): keeps the original landing page columns.
+     * Cloned projects (KHI, OCCEO) get a "<PREFIX> Proposal" column from <prefix>_proposal plus an LOI column.
      * @return bool
      */
     function isLegacyMchri() {
-        return isset($this->getProj()->forms['round_2']);
+        return isset($this->getProj()->forms['round_2']) && isset($this->getProj()->metadata['chri_proposal']);
     }
 
     /**
@@ -397,6 +397,16 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                 $select[] = 'loi';
                 $header[] = 'LOI';
             }
+            //drop upload columns the project doesn't have (e.g. OCCEO: no budget_worksheet or <prefix>_proposal)
+            $missing = array();
+            if (!isset($this->getProj()->metadata['budget_worksheet'])) $missing[] = 'budget';
+            if (!isset($this->getProj()->metadata[$this->getProposalField()])) $missing[] = 'proposal';
+            foreach ($missing as $col) {
+                $i = array_search($col, $select);
+                unset($select[$i], $header[$i]);
+            }
+            $select = array_values($select);
+            $header = array_values($header);
         }
 
         foreach ($data as $key => $row) {
