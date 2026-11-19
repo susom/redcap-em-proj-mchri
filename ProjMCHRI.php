@@ -392,7 +392,11 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
         $header = array('Reviewer Form', 'Program', 'FY', 'Cycle', 'Full Name', 'Department', 'Division',
             'Reviewer Number', 'Budget Worksheet', 'MCHRI Proposal');
         if (!$this->isLegacyMchri()) {
-            $header[count($header) - 1] = strtoupper(preg_replace('/_proposal$/', '', $this->getProposalField())) . ' Proposal';
+            $has_prefix_proposal = isset($this->getProj()->metadata[$this->getProposalField()]);
+            $has_full_proposal   = isset($this->getProj()->metadata['full_proposal_v2']);
+            $header[count($header) - 1] = $has_prefix_proposal
+                ? strtoupper(preg_replace('/_proposal$/', '', $this->getProposalField())) . ' Proposal'
+                : 'Full Proposal';
             if (isset($this->getProj()->metadata['loi'])) {
                 $select[] = 'loi';
                 $header[] = 'LOI';
@@ -400,7 +404,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
             //drop upload columns the project doesn't have (e.g. OCCEO: no budget_worksheet or <prefix>_proposal)
             $missing = array();
             if (!isset($this->getProj()->metadata['budget_worksheet'])) $missing[] = 'budget';
-            if (!isset($this->getProj()->metadata[$this->getProposalField()])) $missing[] = 'proposal';
+            if (!$has_prefix_proposal && !$has_full_proposal) $missing[] = 'proposal';
             foreach ($missing as $col) {
                 $i = array_search($col, $select);
                 unset($select[$i], $header[$i]);
@@ -436,7 +440,7 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                             break;
                         }
                         //the returned valued from getData is the edocID!
-                        $cell = $this->renderDownloadButton($this->getProposalField(), $row['record_id'], $item, $sunet_id);
+                        $cell = $this->renderDownloadButton($row['proposal_name'] ?? $this->getProposalField(), $row['record_id'], $item, $sunet_id);
                         $table_data[$row_id][$k_item] = array('CUSTOM' => 'plain', 'DISPLAY' => $cell);
                         break;
                     case "loi":
@@ -883,6 +887,18 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                         $proposal_field = $first_event[$this->getProposalField()];
                     }
 
+                    //cloned projects with full_proposal_v2 but no <prefix>_proposal (OCCEO): Round 2 reviewers get the full proposal, not the LOI
+                    $proposal_name = $this->getProposalField();
+                    $loi_field     = $first_event['loi'] ?? null;
+                    if ($reviewer_round == "2" && !$this->isLegacyMchri()
+                        && !isset($this->getProj()->metadata[$this->getProposalField()])
+                        && isset($this->getProj()->metadata['full_proposal_v2'])) {
+                        $budget_field   = $first_event['budget_worksheet_v2'] ?? null;
+                        $proposal_field = $first_event['full_proposal_v2'] ?? null;
+                        $proposal_name  = 'full_proposal_v2';
+                        $loi_field      = null;
+                    }
+
                     $array = array(
                         "record_id"             =>$key,
                         "review_marked_complete"=> $complete_status ,  //$value['review_marked_complete']['1'],
@@ -895,7 +911,8 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
                         "reviewer_num"          => $reviewer_num,
                         'budget'                => $budget_field, //$first_event['budget_worksheet'],
                         'proposal'              => $proposal_field, //$first_event['chri_proposal']);
-                        'loi'                   => $first_event['loi'] ?? null);
+                        'proposal_name'         => $proposal_name,
+                        'loi'                   => $loi_field);
                     array_push($returnarray, $array);
                 }
             }
