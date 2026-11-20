@@ -112,7 +112,7 @@ function voefr($var) {
 <script type="text/javascript">
     $(document).ready(function () {
         /** suppress the scores for ReviewerReport */
-        $('tbody > tr > td:contains("LOI Ranking")').parent().remove();
+        $('tbody > tr > td:contains("LOI Ranking"), tbody > tr > td:contains("SOI Ranking")').parent().remove();
     });
 </script>
 <style>
