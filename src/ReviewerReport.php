@@ -96,7 +96,7 @@ function voefr($var) {
 <body>
 <div class="container">
     <header class="page-header">
-        <img src=<?php echo $module->getUrl("img/MCHRI_Logo_LeftAligned_TwoColor.png") ?> />
+        <img src="<?php echo $module->getLogoUrl() ?>" />
         <div class="col-xs-12">
             <div class="chri_logo"></div>
             <h1>Reviewer Report</h1>
@@ -117,9 +117,8 @@ function voefr($var) {
 </script>
 <style>
     img {
-        background:url(<?php echo $module->getUrl("img/MCHRI_Logo_LeftAligned_TwoColor.png") ?>) 50% 50% no-repeat;
-        height:100px;
-        background-size:100%;
+        max-height:100px;
+        max-width:100%;
         margin-top: 10px;
     }
 </style>

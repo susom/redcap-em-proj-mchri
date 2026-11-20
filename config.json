@@ -117,6 +117,22 @@
 			"type": "field-list"
 		},
 		{
+			"key": "logo-file",
+			"name": "<b>OPTIONAL: Logo</b><br>Logo on the landing page and reviewer reports. Leave blank for the MCHRI logo",
+			"required": false,
+			"type": "dropdown",
+			"choices": [
+				{ "value": "MCHRI_Logo_LeftAligned_TwoColor.png", "name": "MCHRI" },
+				{ "value": "OCCEO_Logo.jpg", "name": "OCCEO (Office of the Chief Community Engagement Officer)" }
+			]
+		},
+		{
+			"key": "landing-title",
+			"name": "<b>OPTIONAL: Landing Page Title</b><br>Browser title of the reviewer landing page. Leave blank for <i>MCHRI Application Review</i>",
+			"required": false,
+			"type": "text"
+		},
+		{
 			"key": "test",
 			"name": "<b>TESTING : check if in testing mode</b>",
 			"required": false,

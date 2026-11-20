@@ -304,6 +304,20 @@ class ProjMCHRI extends \ExternalModules\AbstractExternalModule
      * The project being worked on: set by the landing page methods (no-auth, projectId param), else project context
      * @return Project
      */
+    /**
+     * Logo URL for the landing page and reports (project setting logo-file, default MCHRI)
+     * @param $pid
+     * @param bool $noAuth
+     * @return string
+     */
+    function getLogoUrl($pid = null, $noAuth = false) {
+        $logo = basename((string)$this->getProjectSetting('logo-file', $pid));
+        if (empty($logo) || !file_exists($this->getModulePath() . 'img/' . $logo)) {
+            $logo = 'MCHRI_Logo_LeftAligned_TwoColor.png';
+        }
+        return $this->getUrl('img/' . $logo, $noAuth, $noAuth);
+    }
+
     function getProj() {
         global $Proj;
         return !empty($this->Proj) ? $this->Proj : $Proj;

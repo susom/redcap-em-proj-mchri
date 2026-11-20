@@ -84,7 +84,7 @@ $review_grid = $module->generateReviewGrid($pid, $sunet_id, $flex_data);
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>MCHRI Application Review</title>
+    <title><?php echo htmlspecialchars($module->getProjectSetting('landing-title', $pid) ?: 'MCHRI Application Review', ENT_QUOTES) ?></title>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
@@ -152,15 +152,16 @@ $review_grid = $module->generateReviewGrid($pid, $sunet_id, $flex_data);
 </script>
 <style>
     .header-global nav a.som-logo{
-        background:url(<?php echo $module->getUrl("img/MCHRI_Logo_LeftAligned_TwoColor.png", true, true) ?>) 50% 50% no-repeat;
+        background:url(<?php echo $module->getLogoUrl($pid, true) ?>) 0% 50% no-repeat;
         border-right: none;
         text-indent: -9999px;
         display: inline-block;
-        width: 300px;
+        width: 400px;
+        max-width: 100%;
         /* width: 14.285714285714286rem; */
         height: 120px;
         height: 4.5rem;
-        background-size: 90%;
+        background-size: contain;
     }
 </style>
 
